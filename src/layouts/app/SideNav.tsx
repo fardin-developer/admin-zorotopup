@@ -1,33 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
 import {
-  AppstoreAddOutlined,
   BranchesOutlined,
-  BugOutlined,
-  GithubOutlined,
-  IdcardOutlined,
   InfoCircleOutlined,
   PieChartOutlined,
-  ProductOutlined,
-  SecurityScanOutlined,
-  SnippetsOutlined,
   UserOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
 import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  PATH_ABOUT,
-  PATH_AUTH,
-  PATH_CORPORATE,
-  PATH_DASHBOARD,
-  PATH_DOCS,
-  PATH_ERROR,
-  PATH_GITHUB,
-  PATH_LANDING,
-  PATH_SITEMAP,
-  PATH_USER_PROFILE,
-} from '../../constants';
 import { COLOR } from '../../App.tsx';
 
 const { Sider } = Layout;

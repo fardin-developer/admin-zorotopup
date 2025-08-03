@@ -11,19 +11,14 @@ import {
   Statistic,
   Space,
   Button,
-  Divider,
   Table,
-  Dropdown,
   Popconfirm
 } from 'antd';
 import { 
   ArrowLeftOutlined, 
-  DollarOutlined, 
   GiftOutlined, 
-  PercentageOutlined,
   EditOutlined,
-  DeleteOutlined,
-  MoreOutlined
+  DeleteOutlined
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -120,6 +115,7 @@ const GamePackages: React.FC = () => {
   };
 
   const handleDeletePackage = async (packageId: string) => {
+    console.log('Deleting package:', packageId);
     try {
       // TODO: Implement delete API call
       message.success('Package deleted successfully');

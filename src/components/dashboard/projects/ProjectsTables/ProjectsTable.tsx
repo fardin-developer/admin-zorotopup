@@ -94,7 +94,7 @@ const COLUMNS = [
 
 type Props = {
   data: Projects[];
-} & TableProps<any>;
+} & TableProps<Projects>;
 
 export const ProjectsTable = ({ data, ...others }: Props) => {
   return (

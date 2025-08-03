@@ -1,29 +1,12 @@
 import { createBrowserRouter, useLocation } from 'react-router-dom';
 import {
   AccountDeactivePage,
-  BiddingDashboardPage,
-  CorporateAboutPage,
-  CorporateContactPage,
-  CorporateFaqPage,
-  CorporateLicensePage,
-  CorporatePricingPage,
-  CorporateTeamPage,
-  DefaultDashboardPage,
   EcommerceDashboardPage,
-  Error400Page,
-  Error403Page,
-  Error404Page,
-  Error500Page,
-  Error503Page,
   ErrorPage,
-  HomePage,
-  MarketingDashboardPage,
   PasswordResetPage,
-  ProjectsDashboardPage,
   SignInPage,
   SignUpPage,
   SitemapPage,
-  SocialDashboardPage,
   UserProfileActionsPage,
   UserProfileActivityPage,
   UserProfileDetailsPage,
@@ -34,8 +17,6 @@ import {
   UserProfileSecurityPage,
   VerifyEmailPage,
   WelcomePage,
-  LearningDashboardPage,
-  LogisticsDashboardPage,
   GamePage,
   GamePackagesPage,
   EditPackagePage,
@@ -44,10 +25,8 @@ import {
   UsersPage
 } from '../pages';
 import {
-  CorporateLayout,
   DashboardLayout,
-  GuestLayout,
-  UserAccountLayout,
+  UserAccountLayout
 } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
 import { AboutPage } from '../pages/About.tsx';

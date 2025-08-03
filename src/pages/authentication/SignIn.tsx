@@ -1,6 +1,5 @@
 import {
   Button,
-  Checkbox,
   Col,
   Divider,
   Flex,
@@ -13,9 +12,6 @@ import {
   Steps,
 } from 'antd';
 import {
-  FacebookFilled,
-  GoogleOutlined,
-  TwitterOutlined,
   PhoneOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
@@ -58,7 +54,6 @@ export const SignInPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [sendOtpForm] = Form.useForm();
   const [verifyOtpForm] = Form.useForm();
 
@@ -78,7 +73,6 @@ export const SignInPage = () => {
       if (response.ok) {
         message.success('OTP sent successfully to your phone number');
         setPhoneNumber(values.phone || '');
-        setOtpSent(true);
         setCurrentStep(1);
       } else {
         message.error(data.message || 'Failed to send OTP');
@@ -141,7 +135,6 @@ export const SignInPage = () => {
 
   const handleBackToPhone = () => {
     setCurrentStep(0);
-    setOtpSent(false);
     setPhoneNumber('');
     verifyOtpForm.resetFields();
   };
