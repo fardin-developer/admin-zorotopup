@@ -61,8 +61,30 @@ export const authenticatedFetch = async (
   });
 };
 
+function getRootDomain(hostname: string) {
+  const parts = hostname.split('.').filter(Boolean);
+  if (parts.length >= 2) {
+    return parts.slice(-2).join('.');
+  }
+  return hostname;
+}
+
+function getApiBaseUrl() {
+  const hostname = window.location.hostname;
+  
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3000/api/v1';
+  }
+  
+  const rootDomain = getRootDomain(hostname);
+  return `https://api.${rootDomain}/api/v1`;
+}
+
+const domain = getApiBaseUrl();
+
+
 // API base URL
-export const API_BASE_URL = 'http://localhost:3000/api/v1';
+export const API_BASE_URL = domain;
 
 // Common API endpoints
 export const API_ENDPOINTS = {
