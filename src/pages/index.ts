@@ -1,0 +1,14 @@
+export { HomePage } from './Home.tsx';
+export { SitemapPage } from './Sitemap.tsx';
+export { default as GamePage } from './Game.tsx';
+export { default as GamePackagesPage } from './GamePackages.tsx';
+export { default as EditPackagePage } from './EditPackage.tsx';
+export { default as CreatePackagesPage } from './CreatePackages.tsx';
+export { default as CreateGamePage } from './CreateGame.tsx';
+export { default as EditGamePage } from './EditGame.tsx';
+export { default as UsersPage } from './Users.tsx';
+export * from './dashboards';
+export * from './corporate';
+export * from './userAccount';
+export * from './authentication';
+export * from './errors';
