@@ -13,6 +13,7 @@ import {
   UploadFile,
   UploadProps,
   Upload,
+  Spin,
 } from 'antd';
 import {
   MinusCircleOutlined,
@@ -20,7 +21,7 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
-import { authenticatedFetch, API_ENDPOINTS, API_BASE_URL } from '../utils/auth';
+import { authenticatedFetch, API_ENDPOINTS } from '../utils/auth';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
@@ -476,6 +477,17 @@ const CreatePackagesPage: React.FC = () => {
       ? { file: e.file, fileList: e.fileList }
       : null;
   };
+
+  if (loadingApiProviders) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>
+          <Title level={4}>Loading package data...</Title>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -80,7 +80,7 @@ function getApiBaseUrl() {
   return `https://api.${rootDomain}/api/v1`;
 }
 
-const domain = getApiBaseUrl();
+export const domain = getApiBaseUrl();
 
 // API base URL
 export const API_BASE_URL = 'https://game.cptopup.in/api/v1';

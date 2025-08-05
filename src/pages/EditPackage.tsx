@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Card, Row, Col, Button, Form, Input, Select, Space, Divider, message, Spin } from 'antd';
-import { MinusCircleOutlined, PlusOutlined, ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import {
+  Typography,
+  Card,
+  Row,
+  Col,
+  Button,
+  Form,
+  Input,
+  Select,
+  Space,
+  Divider,
+  message,
+  Spin,
+} from 'antd';
+import {
+  MinusCircleOutlined,
+  PlusOutlined,
+  ArrowLeftOutlined,
+  EditOutlined,
+} from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_ENDPOINTS, API_BASE_URL, authenticatedFetch } from '../utils/auth';
@@ -93,30 +111,43 @@ interface ApiProvidersResponse {
 
 const EditPackagePage: React.FC = () => {
   const navigate = useNavigate();
-  const { gameId, packageId } = useParams<{ gameId: string; packageId: string }>();
+  const { gameId, packageId } = useParams<{
+    gameId: string;
+    packageId: string;
+  }>();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<{ [key: string]: Product[] }>({});
-  const [loadingProducts, setLoadingProducts] = useState<{ [key: string]: boolean }>({});
+  const [loadingProducts, setLoadingProducts] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [games, setGames] = useState<Game[]>([]);
   const [loadingGames, setLoadingGames] = useState(false);
-  const [productVariations, setProductVariations] = useState<{ [key: string]: ProductDetail }>({});
-  const [loadingVariations, setLoadingVariations] = useState<{ [key: string]: boolean }>({});
+  const [productVariations, setProductVariations] = useState<{
+    [key: string]: ProductDetail;
+  }>({});
+  const [loadingVariations, setLoadingVariations] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [packageData, setPackageData] = useState<DiamondPack | null>(null);
-  const [editingMappings, setEditingMappings] = useState<{ [key: number]: boolean }>({});
+  const [editingMappings, setEditingMappings] = useState<{
+    [key: number]: boolean;
+  }>({});
   const [apiProviders, setApiProviders] = useState<ApiProvider[]>([]);
   const [loadingApiProviders, setLoadingApiProviders] = useState(false);
 
   const fetchPackageData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/games/diamond-pack/${packageId}`);
+      const response = await fetch(
+        `${API_BASE_URL}/games/diamond-pack/${packageId}`
+      );
       const data: PackageResponse = await response.json();
-      
+
       if (data.success) {
         setPackageData(data.diamondPack);
-        
+
         // Prepare form data - only set productId initially, no product selection
         const formData = {
           gameId: data.diamondPack.game,
@@ -126,12 +157,12 @@ const EditPackagePage: React.FC = () => {
           logo: data.diamondPack.logo,
           description: data.diamondPack.description,
           status: data.diamondPack.status,
-          apiMappings: data.diamondPack.apiMappings.map(mapping => ({
+          apiMappings: data.diamondPack.apiMappings.map((mapping) => ({
             apiProvider: mapping.apiProvider.id,
-            productId: mapping.productId
-          }))
+            productId: mapping.productId,
+          })),
         };
-        
+
         form.setFieldsValue(formData);
         message.success('Package data loaded successfully');
       } else {
@@ -149,21 +180,24 @@ const EditPackagePage: React.FC = () => {
 
   const fetchProductDetail = async (productId: string) => {
     try {
-      setLoadingVariations(prev => ({ ...prev, [productId]: true }));
-      const response = await fetch(`${API_BASE_URL}/moogold/product/product_detail`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: "product/product_detail",
-          product_id: parseInt(productId)
-        })
-      });
+      setLoadingVariations((prev) => ({ ...prev, [productId]: true }));
+      const response = await fetch(
+        `${API_BASE_URL}/moogold/product/product_detail`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: 'product/product_detail',
+            product_id: parseInt(productId),
+          }),
+        }
+      );
       const data: ProductDetailResponse = await response.json();
-      
+
       if (data.success) {
-        setProductVariations(prev => ({ ...prev, [productId]: data.data }));
+        setProductVariations((prev) => ({ ...prev, [productId]: data.data }));
         return data.data;
       } else {
         message.error('Failed to fetch product variations');
@@ -172,7 +206,7 @@ const EditPackagePage: React.FC = () => {
       console.error('Error fetching product variations:', error);
       message.error('Error fetching product variations');
     } finally {
-      setLoadingVariations(prev => ({ ...prev, [productId]: false }));
+      setLoadingVariations((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -181,7 +215,7 @@ const EditPackagePage: React.FC = () => {
       setLoadingGames(true);
       const response = await authenticatedFetch(API_ENDPOINTS.GAMES_GET_ALL);
       const data: GamesResponse = await response.json();
-      
+
       if (data.success) {
         setGames(data.games);
       } else {
@@ -200,7 +234,7 @@ const EditPackagePage: React.FC = () => {
       setLoadingApiProviders(true);
       const response = await fetch(API_ENDPOINTS.API_LIST);
       const data: ApiProvidersResponse = await response.json();
-      
+
       if (data.apis && data.apis.length > 0) {
         setApiProviders(data.apis);
       } else {
@@ -224,21 +258,24 @@ const EditPackagePage: React.FC = () => {
 
   const fetchMoogoldProducts = async () => {
     try {
-      setLoadingProducts(prev => ({ ...prev, moogold: true }));
-      const response = await fetch(`${API_BASE_URL}/moogold/product/list_product`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: "product/list_product",
-          category_id: 50
-        })
-      });
+      setLoadingProducts((prev) => ({ ...prev, moogold: true }));
+      const response = await fetch(
+        `${API_BASE_URL}/moogold/product/list_product`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: 'product/list_product',
+            category_id: 50,
+          }),
+        }
+      );
       const data: ApiResponse = await response.json();
-      
+
       if (data.success) {
-        setProducts(prev => ({ ...prev, moogold: data.data }));
+        setProducts((prev) => ({ ...prev, moogold: data.data }));
       } else {
         message.error('Failed to fetch products');
       }
@@ -246,13 +283,14 @@ const EditPackagePage: React.FC = () => {
       console.error('Error fetching moogold products:', error);
       message.error('Error fetching products');
     } finally {
-      setLoadingProducts(prev => ({ ...prev, moogold: false }));
+      setLoadingProducts((prev) => ({ ...prev, moogold: false }));
     }
   };
 
   const handleApiProviderChange = (value: string, fieldName: number) => {
-    const providerName = apiProviders.find(provider => provider.id === value)?.name;
-    
+    const providerName = apiProviders.find((provider) => provider.id === value)
+      ?.name;
+
     // Clear all related fields when API provider changes
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
@@ -261,7 +299,7 @@ const EditPackagePage: React.FC = () => {
       productId: undefined,
       productTitle: undefined,
       selectedProductId: undefined,
-      variationId: undefined
+      variationId: undefined,
     };
     form.setFieldsValue({ apiMappings });
 
@@ -271,9 +309,13 @@ const EditPackagePage: React.FC = () => {
     }
   };
 
-  const handleProductSelect = async (value: string, option: any, fieldName: number) => {
+  const handleProductSelect = async (
+    value: string,
+    option: any,
+    fieldName: number
+  ) => {
     const productId = option.key;
-    
+
     // Auto-fill the product ID when a product is selected
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
@@ -281,7 +323,7 @@ const EditPackagePage: React.FC = () => {
       ...apiMappings[fieldName],
       productTitle: value,
       selectedProductId: productId,
-      variationId: undefined // Clear variation when product changes
+      variationId: undefined, // Clear variation when product changes
     };
     form.setFieldsValue({ apiMappings });
 
@@ -295,53 +337,65 @@ const EditPackagePage: React.FC = () => {
     apiMappings[fieldName] = {
       ...apiMappings[fieldName],
       variationId: variationId,
-      productId: variationId // Use variation_id as the final productId
+      productId: variationId, // Use variation_id as the final productId
     };
     form.setFieldsValue({ apiMappings });
   };
 
   const getProductOptions = (apiProviderId: string) => {
-    const providerName = apiProviders.find(provider => provider.id === apiProviderId)?.name;
-    
+    const providerName = apiProviders.find(
+      (provider) => provider.id === apiProviderId
+    )?.name;
+
     if (providerName === 'moogold' && products.moogold) {
-      return products.moogold.map(product => (
+      return products.moogold.map((product) => (
         <Option key={product.ID} value={product.post_title}>
           {product.post_title}
         </Option>
       ));
     }
-    
+
     return [];
   };
 
   const toggleEditMapping = (fieldName: number) => {
-    setEditingMappings(prev => ({
+    setEditingMappings((prev) => ({
       ...prev,
-      [fieldName]: !prev[fieldName]
+      [fieldName]: !prev[fieldName],
     }));
-    
+
     // If enabling edit mode for moogold, fetch products
-    const currentApiProvider = form.getFieldValue(['apiMappings', fieldName, 'apiProvider']);
-    const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
-    
-    if (!editingMappings[fieldName] && providerName === 'moogold' && !products.moogold) {
+    const currentApiProvider = form.getFieldValue([
+      'apiMappings',
+      fieldName,
+      'apiProvider',
+    ]);
+    const providerName = apiProviders.find(
+      (provider) => provider.id === currentApiProvider
+    )?.name;
+
+    if (
+      !editingMappings[fieldName] &&
+      providerName === 'moogold' &&
+      !products.moogold
+    ) {
       fetchMoogoldProducts();
     }
   };
 
   const cancelEditMapping = (fieldName: number) => {
-    setEditingMappings(prev => ({
+    setEditingMappings((prev) => ({
       ...prev,
-      [fieldName]: false
+      [fieldName]: false,
     }));
-    
+
     // Reset to original productId if available
     if (packageData?.apiMappings[fieldName]) {
       const currentValues = form.getFieldsValue();
       const apiMappings = [...currentValues.apiMappings];
       apiMappings[fieldName] = {
         apiProvider: packageData.apiMappings[fieldName].apiProvider.id,
-        productId: packageData.apiMappings[fieldName].productId
+        productId: packageData.apiMappings[fieldName].productId,
       };
       form.setFieldsValue({ apiMappings });
     }
@@ -352,16 +406,19 @@ const EditPackagePage: React.FC = () => {
     try {
       const { gameId: formGameId, ...packageUpdateData } = values;
 
-      const response = await fetch(`${API_BASE_URL}/games/diamond-pack/${packageId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(packageUpdateData)
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/games/diamond-pack/${packageId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(packageUpdateData),
+        }
+      );
 
       const result = await response.json();
-      
+
       if (response.ok && result.success !== false) {
         message.success('Package updated successfully!');
         navigate(`/games/game/${gameId}/packages`);
@@ -380,7 +437,7 @@ const EditPackagePage: React.FC = () => {
     navigate(`/games/game/${gameId}/packages`);
   };
 
-  if (loading) {
+  if (loading || loadingApiProviders) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 0' }}>
         <Spin size="large" />
@@ -410,10 +467,10 @@ const EditPackagePage: React.FC = () => {
           },
         ]}
       />
-      
+
       <div style={{ marginBottom: 24 }}>
-        <Button 
-          icon={<ArrowLeftOutlined />} 
+        <Button
+          icon={<ArrowLeftOutlined />}
           onClick={handleBackToPackages}
           size="large"
         >
@@ -426,7 +483,8 @@ const EditPackagePage: React.FC = () => {
           <Card>
             <Title level={2}>Edit Game Package</Title>
             <Paragraph>
-              Update and modify the game package configuration. Change pricing, features, and availability settings.
+              Update and modify the game package configuration. Change pricing,
+              features, and availability settings.
             </Paragraph>
             <Form
               form={form}
@@ -445,22 +503,33 @@ const EditPackagePage: React.FC = () => {
                   loading={loadingGames}
                   filterOption={(input, option) => {
                     if (!option?.children) return false;
-                    return String(option.children).toLowerCase().includes(input.toLowerCase());
+                    return String(option.children)
+                      .toLowerCase()
+                      .includes(input.toLowerCase());
                   }}
                 >
                   {games.map((game) => (
                     <Option key={game._id} value={game._id}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <img 
-                          src={game.image} 
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <img
+                          src={game.image}
                           alt={game.name}
                           style={{ width: 24, height: 24, borderRadius: 4 }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).style.display =
+                              'none';
                           }}
                         />
                         <span>{game.name}</span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>({game.publisher})</span>
+                        <span style={{ color: '#666', fontSize: '12px' }}>
+                          ({game.publisher})
+                        </span>
                       </div>
                     </Option>
                   ))}
@@ -480,16 +549,24 @@ const EditPackagePage: React.FC = () => {
                   <Form.Item
                     name="commission"
                     label="Commission"
-                    rules={[{ required: true, message: 'Please enter commission' }]}
+                    rules={[
+                      { required: true, message: 'Please enter commission' },
+                    ]}
                   >
-                    <Input type="number" placeholder="Enter commission" min={0} />
+                    <Input
+                      type="number"
+                      placeholder="Enter commission"
+                      min={0}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
                   <Form.Item
                     name="cashback"
                     label="Cashback"
-                    rules={[{ required: true, message: 'Please enter cashback' }]}
+                    rules={[
+                      { required: true, message: 'Please enter cashback' },
+                    ]}
                   >
                     <Input type="number" placeholder="Enter cashback" min={0} />
                   </Form.Item>
@@ -500,7 +577,10 @@ const EditPackagePage: React.FC = () => {
                   <Form.Item
                     name="logo"
                     label="Logo URL"
-                    rules={[{ required: true, message: 'Please enter logo URL' }, { type: 'url', message: 'Please enter a valid URL' }]}
+                    rules={[
+                      { required: true, message: 'Please enter logo URL' },
+                      { type: 'url', message: 'Please enter a valid URL' },
+                    ]}
                   >
                     <Input placeholder="https://example.com/logo.png" />
                   </Form.Item>
@@ -509,7 +589,9 @@ const EditPackagePage: React.FC = () => {
                   <Form.Item
                     name="status"
                     label="Status"
-                    rules={[{ required: true, message: 'Please select status' }]}
+                    rules={[
+                      { required: true, message: 'Please select status' },
+                    ]}
                   >
                     <Select>
                       <Option value="active">Active</Option>
@@ -521,58 +603,105 @@ const EditPackagePage: React.FC = () => {
               <Form.Item
                 name="description"
                 label="Description"
-                rules={[{ required: true, message: 'Please enter description' }]}
+                rules={[
+                  { required: true, message: 'Please enter description' },
+                ]}
               >
-                <Input.TextArea rows={3} placeholder="Enter package description" />
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Enter package description"
+                />
               </Form.Item>
               <Divider orientation="left">API Mappings</Divider>
               <Form.List name="apiMappings">
                 {(fields, { add, remove }) => (
                   <>
                     {fields.map((field) => {
-                      const currentApiProvider = form.getFieldValue(['apiMappings', field.name, 'apiProvider']);
-                      const selectedProductId = form.getFieldValue(['apiMappings', field.name, 'selectedProductId']);
-                      const currentProductId = form.getFieldValue(['apiMappings', field.name, 'productId']);
-                      const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
-                      const productDetail = selectedProductId ? productVariations[selectedProductId] : null;
+                      const currentApiProvider = form.getFieldValue([
+                        'apiMappings',
+                        field.name,
+                        'apiProvider',
+                      ]);
+                      const selectedProductId = form.getFieldValue([
+                        'apiMappings',
+                        field.name,
+                        'selectedProductId',
+                      ]);
+                      const currentProductId = form.getFieldValue([
+                        'apiMappings',
+                        field.name,
+                        'productId',
+                      ]);
+                      const providerName = apiProviders.find(
+                        (provider) => provider.id === currentApiProvider
+                      )?.name;
+                      const productDetail = selectedProductId
+                        ? productVariations[selectedProductId]
+                        : null;
                       const isEditing = editingMappings[field.name];
-                      
+
                       return (
-                        <div key={String(field.name)} style={{ marginBottom: 16, padding: 16, border: '1px solid #d9d9d9', borderRadius: 6 }}>
+                        <div
+                          key={String(field.name)}
+                          style={{
+                            marginBottom: 16,
+                            padding: 16,
+                            border: '1px solid #d9d9d9',
+                            borderRadius: 6,
+                          }}
+                        >
                           <Row gutter={16}>
                             <Col span={6}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, 'apiProvider']}
                                 label="API Provider"
-                                rules={[{ required: true, message: 'Select API Provider' }]}
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: 'Select API Provider',
+                                  },
+                                ]}
                               >
-                                <Select 
+                                <Select
                                   placeholder="Select API Provider"
                                   disabled={!isEditing}
-                                  onChange={(value) => handleApiProviderChange(value, field.name)}
+                                  onChange={(value) =>
+                                    handleApiProviderChange(value, field.name)
+                                  }
                                 >
                                   {apiProviders.map((provider) => (
-                                    <Option key={provider.id} value={provider.id}>{provider.name}</Option>
+                                    <Option
+                                      key={provider.id}
+                                      value={provider.id}
+                                    >
+                                      {provider.name}
+                                    </Option>
                                   ))}
                                 </Select>
                               </Form.Item>
                             </Col>
-                            
+
                             {!isEditing ? (
                               <Col span={12}>
-                                <Form.Item
-                                  label="Product ID"
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Input 
-                                      value={currentProductId} 
-                                      readOnly 
+                                <Form.Item label="Product ID">
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <Input
+                                      value={currentProductId}
+                                      readOnly
                                       style={{ flex: 1 }}
                                     />
-                                    <Button 
-                                      icon={<EditOutlined />} 
-                                      onClick={() => toggleEditMapping(field.name)}
+                                    <Button
+                                      icon={<EditOutlined />}
+                                      onClick={() =>
+                                        toggleEditMapping(field.name)
+                                      }
                                       size="small"
                                     >
                                       Edit
@@ -588,7 +717,12 @@ const EditPackagePage: React.FC = () => {
                                       {...field}
                                       name={[field.name, 'productTitle']}
                                       label="Product"
-                                      rules={[{ required: true, message: 'Select Product' }]}
+                                      rules={[
+                                        {
+                                          required: true,
+                                          message: 'Select Product',
+                                        },
+                                      ]}
                                     >
                                       <Select
                                         placeholder="Select Product"
@@ -596,9 +730,17 @@ const EditPackagePage: React.FC = () => {
                                         loading={loadingProducts.moogold}
                                         filterOption={(input, option) => {
                                           if (!option?.children) return false;
-                                          return String(option.children).toLowerCase().includes(input.toLowerCase());
+                                          return String(option.children)
+                                            .toLowerCase()
+                                            .includes(input.toLowerCase());
                                         }}
-                                        onChange={(value, option) => handleProductSelect(value, option, field.name)}
+                                        onChange={(value, option) =>
+                                          handleProductSelect(
+                                            value,
+                                            option,
+                                            field.name
+                                          )
+                                        }
                                       >
                                         {getProductOptions(currentApiProvider)}
                                       </Select>
@@ -608,58 +750,111 @@ const EditPackagePage: React.FC = () => {
                                       {...field}
                                       name={[field.name, 'productTitle']}
                                       label="Product Title"
-                                      rules={[{ required: true, message: 'Enter Product Title' }]}
+                                      rules={[
+                                        {
+                                          required: true,
+                                          message: 'Enter Product Title',
+                                        },
+                                      ]}
                                     >
                                       <Input placeholder="Product Title" />
                                     </Form.Item>
                                   )}
                                 </Col>
-                                {providerName === 'moogold' && selectedProductId && (
-                                  <Col span={8}>
-                                    <Form.Item
-                                      {...field}
-                                      name={[field.name, 'variationId']}
-                                      label="Variation"
-                                      rules={[{ required: true, message: 'Select Variation' }]}
-                                    >
-                                      <Select
-                                        placeholder="Select Variation"
-                                        loading={loadingVariations[selectedProductId]}
-                                        onChange={(value) => handleVariationSelect(value, field.name)}
-                                        optionLabelProp="label"
+                                {providerName === 'moogold' &&
+                                  selectedProductId && (
+                                    <Col span={8}>
+                                      <Form.Item
+                                        {...field}
+                                        name={[field.name, 'variationId']}
+                                        label="Variation"
+                                        rules={[
+                                          {
+                                            required: true,
+                                            message: 'Select Variation',
+                                          },
+                                        ]}
                                       >
-                                        {productDetail?.Variation?.map((variation) => (
-                                          <Option 
-                                            key={variation.variation_id} 
-                                            value={variation.variation_id.toString()}
-                                            label={`${variation.variation_name} - ${variation.variation_price}`}
-                                          >
-                                            <div style={{ padding: '8px 0' }}>
-                                              <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                                                {variation.variation_name}
-                                              </div>
-                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ color: '#666', fontSize: '12px' }}>
-                                                  ID: {variation.variation_id}
-                                                </span>
-                                                <span style={{ color: '#52c41a', fontWeight: 'bold' }}>
-                                                  ${variation.variation_price}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </Option>
-                                        ))}
-                                      </Select>
-                                    </Form.Item>
-                                  </Col>
-                                )}
+                                        <Select
+                                          placeholder="Select Variation"
+                                          loading={
+                                            loadingVariations[selectedProductId]
+                                          }
+                                          onChange={(value) =>
+                                            handleVariationSelect(
+                                              value,
+                                              field.name
+                                            )
+                                          }
+                                          optionLabelProp="label"
+                                        >
+                                          {productDetail?.Variation?.map(
+                                            (variation) => (
+                                              <Option
+                                                key={variation.variation_id}
+                                                value={variation.variation_id.toString()}
+                                                label={`${variation.variation_name} - ${variation.variation_price}`}
+                                              >
+                                                <div
+                                                  style={{ padding: '8px 0' }}
+                                                >
+                                                  <div
+                                                    style={{
+                                                      fontWeight: 500,
+                                                      marginBottom: 4,
+                                                    }}
+                                                  >
+                                                    {variation.variation_name}
+                                                  </div>
+                                                  <div
+                                                    style={{
+                                                      display: 'flex',
+                                                      justifyContent:
+                                                        'space-between',
+                                                      alignItems: 'center',
+                                                    }}
+                                                  >
+                                                    <span
+                                                      style={{
+                                                        color: '#666',
+                                                        fontSize: '12px',
+                                                      }}
+                                                    >
+                                                      ID:{' '}
+                                                      {variation.variation_id}
+                                                    </span>
+                                                    <span
+                                                      style={{
+                                                        color: '#52c41a',
+                                                        fontWeight: 'bold',
+                                                      }}
+                                                    >
+                                                      $
+                                                      {
+                                                        variation.variation_price
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </Option>
+                                            )
+                                          )}
+                                        </Select>
+                                      </Form.Item>
+                                    </Col>
+                                  )}
                                 {providerName !== 'moogold' && (
                                   <Col span={4}>
                                     <Form.Item
                                       {...field}
                                       name={[field.name, 'productId']}
                                       label="Product ID"
-                                      rules={[{ required: true, message: 'Product ID is required' }]}
+                                      rules={[
+                                        {
+                                          required: true,
+                                          message: 'Product ID is required',
+                                        },
+                                      ]}
                                     >
                                       <Input placeholder="Product ID" />
                                     </Form.Item>
@@ -667,14 +862,16 @@ const EditPackagePage: React.FC = () => {
                                 )}
                               </>
                             )}
-                            
+
                             <Col span={isEditing ? 2 : 4}>
                               <Form.Item label=" ">
                                 {isEditing ? (
                                   <Space>
-                                    <Button 
-                                      size="small" 
-                                      onClick={() => cancelEditMapping(field.name)}
+                                    <Button
+                                      size="small"
+                                      onClick={() =>
+                                        cancelEditMapping(field.name)
+                                      }
                                     >
                                       Cancel
                                     </Button>
@@ -693,21 +890,48 @@ const EditPackagePage: React.FC = () => {
                             </Col>
                           </Row>
                           {productDetail && isEditing && (
-                            <Row style={{ marginTop: 8, padding: '8px 12px', backgroundColor: '#f6f6f6', borderRadius: 4 }}>
+                            <Row
+                              style={{
+                                marginTop: 8,
+                                padding: '8px 12px',
+                                backgroundColor: '#f6f6f6',
+                                borderRadius: 4,
+                              }}
+                            >
                               <Col span={24}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                  <img 
-                                    src={productDetail.Image_URL} 
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                  }}
+                                >
+                                  <img
+                                    src={productDetail.Image_URL}
                                     alt={productDetail.Product_Name}
-                                    style={{ width: 40, height: 40, borderRadius: 4 }}
+                                    style={{
+                                      width: 40,
+                                      height: 40,
+                                      borderRadius: 4,
+                                    }}
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = 'none';
                                     }}
                                   />
                                   <div>
-                                    <div style={{ fontWeight: 500 }}>{productDetail.Product_Name}</div>
-                                    <div style={{ color: '#666', fontSize: '12px' }}>
-                                      {productDetail.Variation?.length} variations available
+                                    <div style={{ fontWeight: 500 }}>
+                                      {productDetail.Product_Name}
+                                    </div>
+                                    <div
+                                      style={{
+                                        color: '#666',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      {productDetail.Variation?.length}{' '}
+                                      variations available
                                     </div>
                                   </div>
                                 </div>
@@ -718,7 +942,12 @@ const EditPackagePage: React.FC = () => {
                       );
                     })}
                     <Form.Item>
-                      <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        icon={<PlusOutlined />}
+                        block
+                      >
                         Add API Mapping
                       </Button>
                     </Form.Item>
@@ -727,7 +956,12 @@ const EditPackagePage: React.FC = () => {
               </Form.List>
               <Form.Item>
                 <Space>
-                  <Button type="primary" htmlType="submit" size="large" loading={submitting}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    loading={submitting}
+                  >
                     Update Package
                   </Button>
                   <Button size="large" onClick={handleBackToPackages}>
@@ -743,4 +977,4 @@ const EditPackagePage: React.FC = () => {
   );
 };
 
-export default EditPackagePage; 
+export default EditPackagePage;
