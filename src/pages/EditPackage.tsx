@@ -3,6 +3,7 @@ import { Typography, Card, Row, Col, Button, Form, Input, Select, Space, Divider
 import { MinusCircleOutlined, PlusOutlined, ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_ENDPOINTS, API_BASE_URL, authenticatedFetch } from '../utils/auth';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
@@ -42,10 +43,8 @@ interface Game {
 }
 
 interface ApiProvider {
-  _id: string;
+  id: string;
   name: string;
-  apiUrl: string;
-  description: string;
 }
 
 interface ApiMapping {
@@ -86,10 +85,11 @@ interface GamesResponse {
   games: Game[];
 }
 
-const apiProviders = [
-  { _id: '6871caa609fd118035159e32', name: 'moogold' },
-  { _id: '6871caa609fd118035159e33', name: 'smileone' },
-];
+interface ApiProvidersResponse {
+  message: string;
+  count: number;
+  apis: ApiProvider[];
+}
 
 const EditPackagePage: React.FC = () => {
   const navigate = useNavigate();
@@ -105,11 +105,13 @@ const EditPackagePage: React.FC = () => {
   const [loadingVariations, setLoadingVariations] = useState<{ [key: string]: boolean }>({});
   const [packageData, setPackageData] = useState<DiamondPack | null>(null);
   const [editingMappings, setEditingMappings] = useState<{ [key: number]: boolean }>({});
+  const [apiProviders, setApiProviders] = useState<ApiProvider[]>([]);
+  const [loadingApiProviders, setLoadingApiProviders] = useState(false);
 
   const fetchPackageData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://game.oneapi.in/api/v1/games/diamond-pack/${packageId}`);
+      const response = await fetch(`${API_BASE_URL}/games/diamond-pack/${packageId}`);
       const data: PackageResponse = await response.json();
       
       if (data.success) {
@@ -125,7 +127,7 @@ const EditPackagePage: React.FC = () => {
           description: data.diamondPack.description,
           status: data.diamondPack.status,
           apiMappings: data.diamondPack.apiMappings.map(mapping => ({
-            apiProvider: mapping.apiProvider._id,
+            apiProvider: mapping.apiProvider.id,
             productId: mapping.productId
           }))
         };
@@ -148,7 +150,7 @@ const EditPackagePage: React.FC = () => {
   const fetchProductDetail = async (productId: string) => {
     try {
       setLoadingVariations(prev => ({ ...prev, [productId]: true }));
-      const response = await fetch('https://game.oneapi.in/api/v1/moogold/product/product_detail', {
+      const response = await fetch(`${API_BASE_URL}/moogold/product/product_detail`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +179,7 @@ const EditPackagePage: React.FC = () => {
   const fetchGames = async () => {
     try {
       setLoadingGames(true);
-      const response = await fetch('https://game.oneapi.in/api/v1/games/get-all');
+      const response = await authenticatedFetch(API_ENDPOINTS.GAMES_GET_ALL);
       const data: GamesResponse = await response.json();
       
       if (data.success) {
@@ -193,17 +195,37 @@ const EditPackagePage: React.FC = () => {
     }
   };
 
+  const fetchApiProviders = async () => {
+    try {
+      setLoadingApiProviders(true);
+      const response = await fetch(API_ENDPOINTS.API_LIST);
+      const data: ApiProvidersResponse = await response.json();
+      
+      if (data.apis && data.apis.length > 0) {
+        setApiProviders(data.apis);
+      } else {
+        message.error('No API providers found');
+      }
+    } catch (error) {
+      console.error('Error fetching API providers:', error);
+      message.error('Error fetching API providers');
+    } finally {
+      setLoadingApiProviders(false);
+    }
+  };
+
   useEffect(() => {
     if (gameId && packageId) {
       fetchGames();
       fetchPackageData();
+      fetchApiProviders();
     }
   }, [gameId, packageId]);
 
   const fetchMoogoldProducts = async () => {
     try {
       setLoadingProducts(prev => ({ ...prev, moogold: true }));
-      const response = await fetch('https://game.oneapi.in/api/v1/moogold/product/list_product', {
+      const response = await fetch(`${API_BASE_URL}/moogold/product/list_product`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -229,7 +251,7 @@ const EditPackagePage: React.FC = () => {
   };
 
   const handleApiProviderChange = (value: string, fieldName: number) => {
-    const providerName = apiProviders.find(provider => provider._id === value)?.name;
+    const providerName = apiProviders.find(provider => provider.id === value)?.name;
     
     // Clear all related fields when API provider changes
     const currentValues = form.getFieldsValue();
@@ -279,7 +301,7 @@ const EditPackagePage: React.FC = () => {
   };
 
   const getProductOptions = (apiProviderId: string) => {
-    const providerName = apiProviders.find(provider => provider._id === apiProviderId)?.name;
+    const providerName = apiProviders.find(provider => provider.id === apiProviderId)?.name;
     
     if (providerName === 'moogold' && products.moogold) {
       return products.moogold.map(product => (
@@ -300,7 +322,7 @@ const EditPackagePage: React.FC = () => {
     
     // If enabling edit mode for moogold, fetch products
     const currentApiProvider = form.getFieldValue(['apiMappings', fieldName, 'apiProvider']);
-    const providerName = apiProviders.find(provider => provider._id === currentApiProvider)?.name;
+    const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
     
     if (!editingMappings[fieldName] && providerName === 'moogold' && !products.moogold) {
       fetchMoogoldProducts();
@@ -318,7 +340,7 @@ const EditPackagePage: React.FC = () => {
       const currentValues = form.getFieldsValue();
       const apiMappings = [...currentValues.apiMappings];
       apiMappings[fieldName] = {
-        apiProvider: packageData.apiMappings[fieldName].apiProvider._id,
+        apiProvider: packageData.apiMappings[fieldName].apiProvider.id,
         productId: packageData.apiMappings[fieldName].productId
       };
       form.setFieldsValue({ apiMappings });
@@ -330,7 +352,7 @@ const EditPackagePage: React.FC = () => {
     try {
       const { gameId: formGameId, ...packageUpdateData } = values;
 
-      const response = await fetch(`https://game.oneapi.in/api/v1/games/diamond-pack/${packageId}`, {
+      const response = await fetch(`${API_BASE_URL}/games/diamond-pack/${packageId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -511,7 +533,7 @@ const EditPackagePage: React.FC = () => {
                       const currentApiProvider = form.getFieldValue(['apiMappings', field.name, 'apiProvider']);
                       const selectedProductId = form.getFieldValue(['apiMappings', field.name, 'selectedProductId']);
                       const currentProductId = form.getFieldValue(['apiMappings', field.name, 'productId']);
-                      const providerName = apiProviders.find(provider => provider._id === currentApiProvider)?.name;
+                      const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
                       const productDetail = selectedProductId ? productVariations[selectedProductId] : null;
                       const isEditing = editingMappings[field.name];
                       
@@ -531,7 +553,7 @@ const EditPackagePage: React.FC = () => {
                                   onChange={(value) => handleApiProviderChange(value, field.name)}
                                 >
                                   {apiProviders.map((provider) => (
-                                    <Option key={provider._id} value={provider._id}>{provider.name}</Option>
+                                    <Option key={provider.id} value={provider.id}>{provider.name}</Option>
                                   ))}
                                 </Select>
                               </Form.Item>

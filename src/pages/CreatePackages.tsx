@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Card, Row, Col, Button, Form, Input, Select, Divider, message } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { PageHeader } from '../components';
-import { authenticatedFetch, API_ENDPOINTS } from '../utils/auth';
+import { authenticatedFetch, API_ENDPOINTS, API_BASE_URL } from '../utils/auth';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
@@ -69,10 +69,21 @@ interface GamesResponse {
   games: Game[];
 }
 
-const apiProviders = [
-  { _id: '6871caa609fd118035159e32', name: 'moogold' },
-  { _id: '6871cd2a09fd118035159e39', name: 'smileone' },
-];
+interface ApiProvider {
+  id: string;
+  name: string;
+  apiUrl: string;
+  description: string;
+  partnerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ApiProvidersResponse {
+  message: string;
+  count: number;
+  apis: ApiProvider[];
+}
 
 const CreatePackagesPage: React.FC = () => {
   const [form] = Form.useForm();
@@ -84,6 +95,8 @@ const CreatePackagesPage: React.FC = () => {
   const [loadingGames, setLoadingGames] = useState(false);
   const [productVariations, setProductVariations] = useState<{ [key: string]: ProductDetail }>({});
   const [loadingVariations, setLoadingVariations] = useState<{ [key: string]: boolean }>({});
+  const [apiProviders, setApiProviders] = useState<ApiProvider[]>([]);
+  const [loadingApiProviders, setLoadingApiProviders] = useState(false);
 
   const fetchProductDetail = async (productId: string) => {
     try {
@@ -99,6 +112,8 @@ const CreatePackagesPage: React.FC = () => {
         })
       });
       const data: ProductDetailResponse = await response.json();
+      console.log(data);
+      
       
       if (data.success) {
         setProductVariations(prev => ({ ...prev, [productId]: data.data }));
@@ -117,12 +132,25 @@ const CreatePackagesPage: React.FC = () => {
   const fetchGames = async () => {
     try {
       setLoadingGames(true);
-      const response = await fetch(API_ENDPOINTS.GAMES_GET_ALL);
+      console.log('Fetching games from:', API_ENDPOINTS.GAMES_GET_ALL);
+      const response = await authenticatedFetch(API_ENDPOINTS.GAMES_GET_ALL);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('Games API response not ok:', response.status, response.statusText);
+        message.error(`Failed to fetch games: ${response.status}`);
+        return;
+      }
+      
       const data: GamesResponse = await response.json();
+      console.log('Games data:', data);
       
       if (data.success) {
         setGames(data.games);
+        console.log('Games set successfully:', data.games.length);
+        message.success(`Loaded ${data.count} games successfully`);
       } else {
+        console.error('API returned success: false');
         message.error('Failed to fetch games');
       }
     } catch (error) {
@@ -133,8 +161,51 @@ const CreatePackagesPage: React.FC = () => {
     }
   };
 
+  const fetchApiProviders = async () => {
+    try {
+      setLoadingApiProviders(true);
+      console.log('Fetching API providers from:', API_ENDPOINTS.API_LIST);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.API_LIST);
+      console.log('API providers response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('Response not ok:', response.status, response.statusText);
+        message.error(`Failed to fetch API providers: ${response.status}`);
+        return;
+      }
+      
+      const data: ApiProvidersResponse = await response.json();
+      console.log('API providers data:', data);
+      
+      if (data.apis && data.apis.length > 0) {
+        setApiProviders(data.apis);
+        console.log('API providers set successfully:', data.apis.length);
+        message.success(`Loaded ${data.count} API providers successfully`);
+      } else {
+        console.error('No API providers found in response');
+        message.error('No API providers found');
+      }
+    } catch (error) {
+      console.error('Error fetching API providers:', error);
+      message.error('Error fetching API providers');
+    } finally {
+      setLoadingApiProviders(false);
+    }
+  };
+
   useEffect(() => {
+    console.log('useEffect triggered - calling fetchGames and fetchApiProviders');
+    
+    // Call fetchGames immediately
     fetchGames();
+    
+    // Add a small delay for API providers to ensure server is ready
+    const timer = setTimeout(() => {
+      fetchApiProviders();
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchMoogoldProducts = async () => {
@@ -193,7 +264,7 @@ const CreatePackagesPage: React.FC = () => {
   };
 
   const handleApiProviderChange = (value: string, fieldName: number) => {
-    const providerName = apiProviders.find(provider => provider._id === value)?.name;
+    const providerName = apiProviders.find(provider => provider.id === value)?.name;
     
     // Clear all related fields when API provider changes
     const currentValues = form.getFieldsValue();
@@ -221,7 +292,7 @@ const CreatePackagesPage: React.FC = () => {
   const handleProductSelect = async (value: string, option: any, fieldName: number) => {
     const productId = option.key;
     const currentApiProvider = form.getFieldValue(['apiMappings', fieldName, 'apiProvider']);
-    const providerName = apiProviders.find(provider => provider._id === currentApiProvider)?.name;
+    const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
     
     // Auto-fill the product ID when a product is selected
     const currentValues = form.getFieldsValue();
@@ -253,7 +324,7 @@ const CreatePackagesPage: React.FC = () => {
   };
 
   const getProductOptions = (apiProviderId: string) => {
-    const providerName = apiProviders.find(provider => provider._id === apiProviderId)?.name;
+    const providerName = apiProviders.find(provider => provider.id === apiProviderId)?.name;
     
     if (providerName === 'moogold' && products.moogold) {
       return products.moogold.map(product => (
@@ -434,7 +505,7 @@ const CreatePackagesPage: React.FC = () => {
                     {fields.map((field) => {
                       const currentApiProvider = form.getFieldValue(['apiMappings', field.name, 'apiProvider']);
                       const selectedProductId = form.getFieldValue(['apiMappings', field.name, 'selectedProductId']);
-                      const providerName = apiProviders.find(provider => provider._id === currentApiProvider)?.name;
+                      const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
                       const productDetail = selectedProductId ? productVariations[selectedProductId] : null;
                       
                       return (
@@ -452,7 +523,7 @@ const CreatePackagesPage: React.FC = () => {
                                   onChange={(value) => handleApiProviderChange(value, field.name)}
                                 >
                                   {apiProviders.map((provider) => (
-                                    <Option key={provider._id} value={provider._id}>{provider.name}</Option>
+                                    <Option key={provider.id} value={provider.id}>{provider.name}</Option>
                                   ))}
                                 </Select>
                               </Form.Item>

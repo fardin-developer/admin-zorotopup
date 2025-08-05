@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_BASE_URL } from '../utils/auth';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -46,11 +47,11 @@ interface DiamondPack {
   cashback: number;
   logo: string;
   description: string;
-  status: string;
-  apiMappings: ApiMapping[];
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+  status?: string;
+  apiMappings?: ApiMapping[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 interface GameData {
@@ -87,7 +88,7 @@ const GamePackages: React.FC = () => {
   const fetchGamePackages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://game.oneapi.in/api/v1/games/${gameId}/diamond-packs`);
+      const response = await fetch(`${API_BASE_URL}/games/${gameId}/diamond-packs`);
       const data: ApiResponse = await response.json();
       
       if (data.success) {
@@ -181,9 +182,9 @@ const GamePackages: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => (
+      render: (status: string | undefined) => (
         <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status.toUpperCase()}
+          {status ? status.toUpperCase() : 'UNKNOWN'}
         </Tag>
       ),
       filters: [
@@ -197,13 +198,17 @@ const GamePackages: React.FC = () => {
       dataIndex: 'apiMappings',
       key: 'apiMappings',
       width: 200,
-      render: (mappings: ApiMapping[]) => (
+      render: (mappings: ApiMapping[] | undefined) => (
         <div>
-          {mappings.map((mapping) => (
-            <Tag key={mapping._id} color="purple" style={{ marginBottom: 4 }}>
-              {mapping.apiProvider.name} (ID: {mapping.productId})
-            </Tag>
-          ))}
+          {mappings && mappings.length > 0 ? (
+            mappings.map((mapping) => (
+              <Tag key={mapping._id} color="purple" style={{ marginBottom: 4 }}>
+                {mapping.apiProvider.name} (ID: {mapping.productId})
+              </Tag>
+            ))
+          ) : (
+            <Text type="secondary">No API mappings</Text>
+          )}
         </div>
       ),
     },
@@ -221,9 +226,12 @@ const GamePackages: React.FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 120,
-      render: (date: string) => new Date(date).toLocaleDateString(),
-      sorter: (a: DiamondPack, b: DiamondPack) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      render: (date: string | undefined) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      sorter: (a: DiamondPack, b: DiamondPack) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateA - dateB;
+      },
     },
     {
       title: 'Actions',

@@ -84,7 +84,7 @@ const domain = getApiBaseUrl();
 
 
 // API base URL
-export const API_BASE_URL = domain;
+export const API_BASE_URL = 'https://game.cptopup.in/api/v1';
 
 // Common API endpoints
 export const API_ENDPOINTS = {
@@ -107,9 +107,10 @@ export const API_ENDPOINTS = {
   GAMES_GET_DIAMOND_PACK_BY_ID: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
   GAMES_UPDATE_DIAMOND_PACK: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
   GAMES_DELETE_DIAMOND_PACK: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
+  MOOGOLD_PRODUCTS: `${API_BASE_URL}/moogold/product/list_product`,
+  MOOGOLD_PRODUCT_DETAIL: `${API_BASE_URL}/moogold/product/product_detail`,
+  SMILEONE_PRODUCTS: `${API_BASE_URL}/smileone/products`,
   
-  // Third-party API endpoints (external)
-  MOOGOLD_PRODUCTS: 'https://game.oneapi.in/api/v1/moogold/product/list_product',
-  MOOGOLD_PRODUCT_DETAIL: 'https://game.oneapi.in/api/v1/moogold/product/product_detail',
-  SMILEONE_PRODUCTS: 'https://game.oneapi.in/api/v1/smileone/products',
+  // API providers endpoint
+  API_LIST: `${API_BASE_URL}/api/list`,
 }; 
