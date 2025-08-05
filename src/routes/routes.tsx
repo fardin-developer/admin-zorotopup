@@ -22,16 +22,14 @@ import {
   EditPackagePage,
   CreatePackagesPage,
   EditGamePage,
-  UsersPage
+  UsersPage,
 } from '../pages';
-import {
-  DashboardLayout,
-  UserAccountLayout
-} from '../layouts';
+import { DashboardLayout, UserAccountLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
 import { AboutPage } from '../pages/About.tsx';
 import CreateGame from '../pages/CreateGame.tsx';
 import { ProtectedRoute } from '../components';
+import ManageGateway from '../pages/ManageGateway.tsx';
 
 // Custom scroll restoration function
 export const ScrollToTop: React.FC = () => {
@@ -66,7 +64,15 @@ const PageWrapper = ({ children }: PageProps) => {
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <PageWrapper children={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {
@@ -78,7 +84,15 @@ const router = createBrowserRouter([
   },
   {
     path: '/games',
-    element: <PageWrapper children={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {
@@ -90,7 +104,7 @@ const router = createBrowserRouter([
         path: 'game/edit/:id',
         element: <EditGamePage />,
       },
-            {
+      {
         path: 'game/:gameId/packages',
         element: <GamePackagesPage />,
       },
@@ -110,7 +124,15 @@ const router = createBrowserRouter([
   },
   {
     path: '/user',
-    element: <PageWrapper children={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {
@@ -121,8 +143,36 @@ const router = createBrowserRouter([
   },
 
   {
+    path: '/gateway',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <ManageGateway />,
+      },
+    ],
+  },
+
+  {
     path: '/profile',
-    element: <PageWrapper children={<ProtectedRoute><UserAccountLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <UserAccountLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {
@@ -166,7 +216,15 @@ const router = createBrowserRouter([
   },
   {
     path: '/about',
-    element: <PageWrapper children={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {
@@ -178,7 +236,15 @@ const router = createBrowserRouter([
   },
   {
     path: '/sitemap',
-    element: <PageWrapper children={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />,
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
     errorElement: <ErrorPage />,
     children: [
       {

@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Card, Row, Col, Button, Form, Input, Select, Divider, message } from 'antd';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  Typography,
+  Card,
+  Row,
+  Col,
+  Button,
+  Form,
+  Input,
+  Select,
+  Divider,
+  message,
+  UploadFile,
+  UploadProps,
+  Upload,
+} from 'antd';
+import {
+  MinusCircleOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { authenticatedFetch, API_ENDPOINTS, API_BASE_URL } from '../utils/auth';
 
@@ -85,38 +103,59 @@ interface ApiProvidersResponse {
   apis: ApiProvider[];
 }
 
+interface PackageFormValues {
+  gameId: string;
+  amount: number;
+  commission: number;
+  cashback: number;
+  logo: {
+    file: UploadFile;
+    fileList: UploadFile[];
+  };
+  status: 'active' | 'inactive';
+  description: string;
+  apiMappings: any[];
+}
+
 const CreatePackagesPage: React.FC = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [products, setProducts] = useState<{ [key: string]: Product[] }>({});
-  const [smileoneProducts, setSmileoneProducts] = useState<{ [key: string]: SmileoneProduct[] }>({});
-  const [loadingProducts, setLoadingProducts] = useState<{ [key: string]: boolean }>({});
+  const [smileoneProducts, setSmileoneProducts] = useState<{
+    [key: string]: SmileoneProduct[];
+  }>({});
+  const [loadingProducts, setLoadingProducts] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [games, setGames] = useState<Game[]>([]);
   const [loadingGames, setLoadingGames] = useState(false);
-  const [productVariations, setProductVariations] = useState<{ [key: string]: ProductDetail }>({});
-  const [loadingVariations, setLoadingVariations] = useState<{ [key: string]: boolean }>({});
+  const [productVariations, setProductVariations] = useState<{
+    [key: string]: ProductDetail;
+  }>({});
+  const [loadingVariations, setLoadingVariations] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [apiProviders, setApiProviders] = useState<ApiProvider[]>([]);
   const [loadingApiProviders, setLoadingApiProviders] = useState(false);
 
   const fetchProductDetail = async (productId: string) => {
     try {
-      setLoadingVariations(prev => ({ ...prev, [productId]: true }));
+      setLoadingVariations((prev) => ({ ...prev, [productId]: true }));
       const response = await fetch(API_ENDPOINTS.MOOGOLD_PRODUCT_DETAIL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: "product/product_detail",
-          product_id: parseInt(productId)
-        })
+          path: 'product/product_detail',
+          product_id: parseInt(productId),
+        }),
       });
       const data: ProductDetailResponse = await response.json();
       console.log(data);
-      
-      
+
       if (data.success) {
-        setProductVariations(prev => ({ ...prev, [productId]: data.data }));
+        setProductVariations((prev) => ({ ...prev, [productId]: data.data }));
         return data.data;
       } else {
         message.error('Failed to fetch product variations');
@@ -125,7 +164,7 @@ const CreatePackagesPage: React.FC = () => {
       console.error('Error fetching product variations:', error);
       message.error('Error fetching product variations');
     } finally {
-      setLoadingVariations(prev => ({ ...prev, [productId]: false }));
+      setLoadingVariations((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -135,16 +174,20 @@ const CreatePackagesPage: React.FC = () => {
       console.log('Fetching games from:', API_ENDPOINTS.GAMES_GET_ALL);
       const response = await authenticatedFetch(API_ENDPOINTS.GAMES_GET_ALL);
       console.log('Response status:', response.status);
-      
+
       if (!response.ok) {
-        console.error('Games API response not ok:', response.status, response.statusText);
+        console.error(
+          'Games API response not ok:',
+          response.status,
+          response.statusText
+        );
         message.error(`Failed to fetch games: ${response.status}`);
         return;
       }
-      
+
       const data: GamesResponse = await response.json();
       console.log('Games data:', data);
-      
+
       if (data.success) {
         setGames(data.games);
         console.log('Games set successfully:', data.games.length);
@@ -165,19 +208,19 @@ const CreatePackagesPage: React.FC = () => {
     try {
       setLoadingApiProviders(true);
       console.log('Fetching API providers from:', API_ENDPOINTS.API_LIST);
-      
+
       const response = await authenticatedFetch(API_ENDPOINTS.API_LIST);
       console.log('API providers response status:', response.status);
-      
+
       if (!response.ok) {
         console.error('Response not ok:', response.status, response.statusText);
         message.error(`Failed to fetch API providers: ${response.status}`);
         return;
       }
-      
+
       const data: ApiProvidersResponse = await response.json();
       console.log('API providers data:', data);
-      
+
       if (data.apis && data.apis.length > 0) {
         setApiProviders(data.apis);
         console.log('API providers set successfully:', data.apis.length);
@@ -195,36 +238,38 @@ const CreatePackagesPage: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('useEffect triggered - calling fetchGames and fetchApiProviders');
-    
+    console.log(
+      'useEffect triggered - calling fetchGames and fetchApiProviders'
+    );
+
     // Call fetchGames immediately
     fetchGames();
-    
+
     // Add a small delay for API providers to ensure server is ready
     const timer = setTimeout(() => {
       fetchApiProviders();
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   const fetchMoogoldProducts = async () => {
     try {
-      setLoadingProducts(prev => ({ ...prev, moogold: true }));
+      setLoadingProducts((prev) => ({ ...prev, moogold: true }));
       const response = await fetch(API_ENDPOINTS.MOOGOLD_PRODUCTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: "product/list_product",
-          category_id: 50
-        })
+          path: 'product/list_product',
+          category_id: 50,
+        }),
       });
       const data: ApiResponse = await response.json();
-      
+
       if (data.success) {
-        setProducts(prev => ({ ...prev, moogold: data.data }));
+        setProducts((prev) => ({ ...prev, moogold: data.data }));
       } else {
         message.error('Failed to fetch products');
       }
@@ -232,26 +277,31 @@ const CreatePackagesPage: React.FC = () => {
       console.error('Error fetching moogold products:', error);
       message.error('Error fetching products');
     } finally {
-      setLoadingProducts(prev => ({ ...prev, moogold: false }));
+      setLoadingProducts((prev) => ({ ...prev, moogold: false }));
     }
   };
 
-  const fetchSmileoneProducts = async (productType: string = 'mobilelegends') => {
+  const fetchSmileoneProducts = async (
+    productType: string = 'mobilelegends'
+  ) => {
     try {
-      setLoadingProducts(prev => ({ ...prev, smileone: true }));
+      setLoadingProducts((prev) => ({ ...prev, smileone: true }));
       const response = await fetch(API_ENDPOINTS.SMILEONE_PRODUCTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          product: productType
-        })
+          product: productType,
+        }),
       });
       const data: SmileoneProductResponse = await response.json();
-      
+
       if (data.success) {
-        setSmileoneProducts(prev => ({ ...prev, [productType]: data.data.product }));
+        setSmileoneProducts((prev) => ({
+          ...prev,
+          [productType]: data.data.product,
+        }));
       } else {
         message.error('Failed to fetch smileone products');
       }
@@ -259,13 +309,14 @@ const CreatePackagesPage: React.FC = () => {
       console.error('Error fetching smileone products:', error);
       message.error('Error fetching smileone products');
     } finally {
-      setLoadingProducts(prev => ({ ...prev, smileone: false }));
+      setLoadingProducts((prev) => ({ ...prev, smileone: false }));
     }
   };
 
   const handleApiProviderChange = (value: string, fieldName: number) => {
-    const providerName = apiProviders.find(provider => provider.id === value)?.name;
-    
+    const providerName = apiProviders.find((provider) => provider.id === value)
+      ?.name;
+
     // Clear all related fields when API provider changes
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
@@ -274,7 +325,7 @@ const CreatePackagesPage: React.FC = () => {
       productId: undefined,
       productTitle: undefined,
       selectedProductId: undefined,
-      variationId: undefined
+      variationId: undefined,
     };
     form.setFieldsValue({ apiMappings });
 
@@ -282,18 +333,28 @@ const CreatePackagesPage: React.FC = () => {
     if (providerName === 'moogold' && !products.moogold) {
       fetchMoogoldProducts();
     }
-    
+
     // Fetch products if smileone is selected and products not already loaded
     if (providerName === 'smileone' && !smileoneProducts.mobilelegends) {
       fetchSmileoneProducts('mobilelegends');
     }
   };
 
-  const handleProductSelect = async (value: string, option: any, fieldName: number) => {
+  const handleProductSelect = async (
+    value: string,
+    option: any,
+    fieldName: number
+  ) => {
     const productId = option.key;
-    const currentApiProvider = form.getFieldValue(['apiMappings', fieldName, 'apiProvider']);
-    const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
-    
+    const currentApiProvider = form.getFieldValue([
+      'apiMappings',
+      fieldName,
+      'apiProvider',
+    ]);
+    const providerName = apiProviders.find(
+      (provider) => provider.id === currentApiProvider
+    )?.name;
+
     // Auto-fill the product ID when a product is selected
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
@@ -302,7 +363,7 @@ const CreatePackagesPage: React.FC = () => {
       productTitle: value,
       selectedProductId: productId,
       productId: productId, // Set productId for smileone
-      variationId: undefined // Clear variation when product changes
+      variationId: undefined, // Clear variation when product changes
     };
     form.setFieldsValue({ apiMappings });
 
@@ -318,52 +379,77 @@ const CreatePackagesPage: React.FC = () => {
     apiMappings[fieldName] = {
       ...apiMappings[fieldName],
       variationId: variationId,
-      productId: variationId // Use variation_id as the final productId
+      productId: variationId, // Use variation_id as the final productId
     };
     form.setFieldsValue({ apiMappings });
   };
 
   const getProductOptions = (apiProviderId: string) => {
-    const providerName = apiProviders.find(provider => provider.id === apiProviderId)?.name;
-    
+    const providerName = apiProviders.find(
+      (provider) => provider.id === apiProviderId
+    )?.name;
+
     if (providerName === 'moogold' && products.moogold) {
-      return products.moogold.map(product => (
+      return products.moogold.map((product) => (
         <Option key={product.ID} value={product.post_title}>
           {product.post_title}
         </Option>
       ));
     }
-    
+
     if (providerName === 'smileone' && smileoneProducts.mobilelegends) {
-      return smileoneProducts.mobilelegends.map(product => (
+      return smileoneProducts.mobilelegends.map((product) => (
         <Option key={product.id} value={product.spu}>
           {product.spu}
         </Option>
       ));
     }
-    
+
     return [];
   };
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: PackageFormValues) => {
     setSubmitting(true);
     try {
       const { gameId, ...packageData } = values;
-      
       if (!gameId) {
         message.error('Please select a game');
+        setSubmitting(false);
         return;
       }
 
-      const response = await authenticatedFetch(API_ENDPOINTS.GAMES_CREATE_DIAMOND_PACK(gameId), {
-        method: 'POST',
-        body: JSON.stringify(packageData)
-      });
+      const formData = new FormData();
+
+      formData.append('amount', String(packageData.amount));
+      formData.append('commission', String(packageData.commission));
+      formData.append('cashback', String(packageData.cashback));
+      formData.append('status', packageData.status);
+      formData.append('description', packageData.description);
+      formData.append('apiMappings', JSON.stringify(packageData.apiMappings));
+
+      if (
+        packageData.logo &&
+        packageData.logo.file &&
+        packageData.logo.file.originFileObj
+      ) {
+        formData.append('logo', packageData.logo.file.originFileObj);
+      } else {
+        message.error('Please upload a package logo.');
+        setSubmitting(false);
+        return;
+      }
+
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.GAMES_CREATE_DIAMOND_PACK(gameId),
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
       console.log(packageData);
-      
 
       const result = await response.json();
-      
+
       if (response.ok && result.success !== false) {
         message.success('Package created successfully!');
         form.resetFields();
@@ -376,6 +462,19 @@ const CreatePackagesPage: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const dummyRequest: UploadProps['customRequest'] = ({ onSuccess }) => {
+    setTimeout(() => {
+      if (onSuccess) onSuccess('ok');
+    }, 0);
+  };
+
+  const normFile = (e: any) => {
+    if (Array.isArray(e)) return e;
+    return e && e.fileList.length > 0
+      ? { file: e.file, fileList: e.fileList }
+      : null;
   };
 
   return (
@@ -398,7 +497,8 @@ const CreatePackagesPage: React.FC = () => {
           <Card>
             <Title level={2}>Create Game Package</Title>
             <Paragraph>
-              Create and configure new game packages. Set up pricing, features, and availability for your game offerings.
+              Create and configure new game packages. Set up pricing, features,
+              and availability for your game offerings.
             </Paragraph>
             <Form
               form={form}
@@ -418,22 +518,33 @@ const CreatePackagesPage: React.FC = () => {
                   loading={loadingGames}
                   filterOption={(input, option) => {
                     if (!option?.children) return false;
-                    return String(option.children).toLowerCase().includes(input.toLowerCase());
+                    return String(option.children)
+                      .toLowerCase()
+                      .includes(input.toLowerCase());
                   }}
                 >
                   {games.map((game) => (
                     <Option key={game._id} value={game._id}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <img 
-                          src={game.image} 
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <img
+                          src={game.image}
                           alt={game.name}
                           style={{ width: 24, height: 24, borderRadius: 4 }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).style.display =
+                              'none';
                           }}
                         />
                         <span>{game.name}</span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>({game.publisher})</span>
+                        <span style={{ color: '#666', fontSize: '12px' }}>
+                          ({game.publisher})
+                        </span>
                       </div>
                     </Option>
                   ))}
@@ -453,16 +564,24 @@ const CreatePackagesPage: React.FC = () => {
                   <Form.Item
                     name="commission"
                     label="Commission"
-                    rules={[{ required: true, message: 'Please enter commission' }]}
+                    rules={[
+                      { required: true, message: 'Please enter commission' },
+                    ]}
                   >
-                    <Input type="number" placeholder="Enter commission" min={0} />
+                    <Input
+                      type="number"
+                      placeholder="Enter commission"
+                      min={0}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
                   <Form.Item
                     name="cashback"
                     label="Cashback"
-                    rules={[{ required: true, message: 'Please enter cashback' }]}
+                    rules={[
+                      { required: true, message: 'Please enter cashback' },
+                    ]}
                   >
                     <Input type="number" placeholder="Enter cashback" min={0} />
                   </Form.Item>
@@ -470,19 +589,49 @@ const CreatePackagesPage: React.FC = () => {
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
+                  {/* <Form.Item
                     name="logo"
                     label="Logo URL"
                     rules={[{ required: true, message: 'Please enter logo URL' }, { type: 'url', message: 'Please enter a valid URL' }]}
                   >
                     <Input placeholder="https://example.com/logo.png" />
+                  </Form.Item> */}
+
+                  <Form.Item
+                    name="logo"
+                    label="Logo"
+                    valuePropName="fileList"
+                    getValueFromEvent={normFile}
+                    rules={[
+                      { required: true, message: 'Please upload a logo' },
+                    ]}
+                  >
+                    <Upload.Dragger
+                      name="logo"
+                      customRequest={dummyRequest}
+                      listType="picture"
+                      maxCount={1}
+                      accept="image/*"
+                    >
+                      <p className="ant-upload-drag-icon">
+                        <UploadOutlined />
+                      </p>
+                      <p className="ant-upload-text">
+                        Click or drag file to this area
+                      </p>
+                      <p className="ant-upload-hint">
+                        Support for a single image file.
+                      </p>
+                    </Upload.Dragger>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
                     name="status"
                     label="Status"
-                    rules={[{ required: true, message: 'Please select status' }]}
+                    rules={[
+                      { required: true, message: 'Please select status' },
+                    ]}
                   >
                     <Select>
                       <Option value="active">Active</Option>
@@ -494,57 +643,110 @@ const CreatePackagesPage: React.FC = () => {
               <Form.Item
                 name="description"
                 label="Description"
-                rules={[{ required: true, message: 'Please enter description' }]}
+                rules={[
+                  { required: true, message: 'Please enter description' },
+                ]}
               >
-                <Input.TextArea rows={3} placeholder="Enter package description" />
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Enter package description"
+                />
               </Form.Item>
               <Divider orientation="left">API Mappings</Divider>
               <Form.List name="apiMappings">
                 {(fields, { add, remove }) => (
                   <>
                     {fields.map((field) => {
-                      const currentApiProvider = form.getFieldValue(['apiMappings', field.name, 'apiProvider']);
-                      const selectedProductId = form.getFieldValue(['apiMappings', field.name, 'selectedProductId']);
-                      const providerName = apiProviders.find(provider => provider.id === currentApiProvider)?.name;
-                      const productDetail = selectedProductId ? productVariations[selectedProductId] : null;
-                      
+                      const currentApiProvider = form.getFieldValue([
+                        'apiMappings',
+                        field.name,
+                        'apiProvider',
+                      ]);
+                      const selectedProductId = form.getFieldValue([
+                        'apiMappings',
+                        field.name,
+                        'selectedProductId',
+                      ]);
+                      const providerName = apiProviders.find(
+                        (provider) => provider.id === currentApiProvider
+                      )?.name;
+                      const productDetail = selectedProductId
+                        ? productVariations[selectedProductId]
+                        : null;
+
                       return (
-                        <div key={String(field.name)} style={{ marginBottom: 16, padding: 16, border: '1px solid #d9d9d9', borderRadius: 6 }}>
+                        <div
+                          key={String(field.name)}
+                          style={{
+                            marginBottom: 16,
+                            padding: 16,
+                            border: '1px solid #d9d9d9',
+                            borderRadius: 6,
+                          }}
+                        >
                           <Row gutter={16}>
                             <Col span={6}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, 'apiProvider']}
                                 label="API Provider"
-                                rules={[{ required: true, message: 'Select API Provider' }]}
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: 'Select API Provider',
+                                  },
+                                ]}
                               >
-                                <Select 
+                                <Select
                                   placeholder="Select API Provider"
-                                  onChange={(value) => handleApiProviderChange(value, field.name)}
+                                  onChange={(value) =>
+                                    handleApiProviderChange(value, field.name)
+                                  }
                                 >
                                   {apiProviders.map((provider) => (
-                                    <Option key={provider.id} value={provider.id}>{provider.name}</Option>
+                                    <Option
+                                      key={provider.id}
+                                      value={provider.id}
+                                    >
+                                      {provider.name}
+                                    </Option>
                                   ))}
                                 </Select>
                               </Form.Item>
                             </Col>
                             <Col span={6}>
-                              {(providerName === 'moogold' || providerName === 'smileone') ? (
+                              {providerName === 'moogold' ||
+                              providerName === 'smileone' ? (
                                 <Form.Item
                                   {...field}
                                   name={[field.name, 'productTitle']}
                                   label="Product"
-                                  rules={[{ required: true, message: 'Select Product' }]}
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: 'Select Product',
+                                    },
+                                  ]}
                                 >
                                   <Select
                                     placeholder="Select Product"
                                     showSearch
-                                    loading={loadingProducts[providerName || '']}
+                                    loading={
+                                      loadingProducts[providerName || '']
+                                    }
                                     filterOption={(input, option) => {
                                       if (!option?.children) return false;
-                                      return String(option.children).toLowerCase().includes(input.toLowerCase());
+                                      return String(option.children)
+                                        .toLowerCase()
+                                        .includes(input.toLowerCase());
                                     }}
-                                    onChange={(value, option) => handleProductSelect(value, option, field.name)}
+                                    onChange={(value, option) =>
+                                      handleProductSelect(
+                                        value,
+                                        option,
+                                        field.name
+                                      )
+                                    }
                                   >
                                     {getProductOptions(currentApiProvider)}
                                   </Select>
@@ -554,78 +756,126 @@ const CreatePackagesPage: React.FC = () => {
                                   {...field}
                                   name={[field.name, 'productTitle']}
                                   label="Product Title"
-                                  rules={[{ required: true, message: 'Enter Product Title' }]}
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: 'Enter Product Title',
+                                    },
+                                  ]}
                                 >
                                   <Input placeholder="Product Title" />
                                 </Form.Item>
                               )}
                             </Col>
-                            {providerName === 'moogold' && selectedProductId && (
-                              <Col span={10}>
-                                <Form.Item
-                                  {...field}
-                                  name={[field.name, 'variationId']}
-                                  label="Variation"
-                                  rules={[{ required: true, message: 'Select Variation' }]}
-                                >
-                                  <Select
-                                    placeholder="Select Variation"
-                                    loading={loadingVariations[selectedProductId]}
-                                    onChange={(value) => handleVariationSelect(value, field.name)}
-                                    optionLabelProp="label"
+                            {providerName === 'moogold' &&
+                              selectedProductId && (
+                                <Col span={10}>
+                                  <Form.Item
+                                    {...field}
+                                    name={[field.name, 'variationId']}
+                                    label="Variation"
+                                    rules={[
+                                      {
+                                        required: true,
+                                        message: 'Select Variation',
+                                      },
+                                    ]}
                                   >
-                                    {productDetail?.Variation?.map((variation) => (
-                                      <Option 
-                                        key={variation.variation_id} 
-                                        value={variation.variation_id.toString()}
-                                        label={`${variation.variation_name} - ${variation.variation_price}`}
-                                      >
-                                        <div style={{ padding: '8px 0' }}>
-                                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                                            {variation.variation_name}
-                                          </div>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#666', fontSize: '12px' }}>
-                                              ID: {variation.variation_id}
-                                            </span>
-                                            <span style={{ color: '#52c41a', fontWeight: 'bold' }}>
-                                              ${variation.variation_price}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </Option>
-                                    ))}
-                                  </Select>
-                                </Form.Item>
-                              </Col>
-                            )}
-                            {providerName === 'smileone' && selectedProductId && (
-                              <Col span={10}>
-                                <Form.Item
-                                  {...field}
-                                  name={[field.name, 'productId']}
-                                  label="Product ID"
-                                  rules={[{ required: true, message: 'Product ID is required' }]}
-                                >
-                                  <Input 
-                                    placeholder="Product ID" 
-                                    readOnly
-                                  />
-                                </Form.Item>
-                              </Col>
-                            )}
-                            {providerName !== 'moogold' && providerName !== 'smileone' && (
-                              <Col span={4}>
-                                <Form.Item
-                                  {...field}
-                                  name={[field.name, 'productId']}
-                                  label="Product ID"
-                                  rules={[{ required: true, message: 'Product ID is required' }]}
-                                >
-                                  <Input placeholder="Product ID" />
-                                </Form.Item>
-                              </Col>
-                            )}
+                                    <Select
+                                      placeholder="Select Variation"
+                                      loading={
+                                        loadingVariations[selectedProductId]
+                                      }
+                                      onChange={(value) =>
+                                        handleVariationSelect(value, field.name)
+                                      }
+                                      optionLabelProp="label"
+                                    >
+                                      {productDetail?.Variation?.map(
+                                        (variation) => (
+                                          <Option
+                                            key={variation.variation_id}
+                                            value={variation.variation_id.toString()}
+                                            label={`${variation.variation_name} - ${variation.variation_price}`}
+                                          >
+                                            <div style={{ padding: '8px 0' }}>
+                                              <div
+                                                style={{
+                                                  fontWeight: 500,
+                                                  marginBottom: 4,
+                                                }}
+                                              >
+                                                {variation.variation_name}
+                                              </div>
+                                              <div
+                                                style={{
+                                                  display: 'flex',
+                                                  justifyContent:
+                                                    'space-between',
+                                                  alignItems: 'center',
+                                                }}
+                                              >
+                                                <span
+                                                  style={{
+                                                    color: '#666',
+                                                    fontSize: '12px',
+                                                  }}
+                                                >
+                                                  ID: {variation.variation_id}
+                                                </span>
+                                                <span
+                                                  style={{
+                                                    color: '#52c41a',
+                                                    fontWeight: 'bold',
+                                                  }}
+                                                >
+                                                  ${variation.variation_price}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </Option>
+                                        )
+                                      )}
+                                    </Select>
+                                  </Form.Item>
+                                </Col>
+                              )}
+                            {providerName === 'smileone' &&
+                              selectedProductId && (
+                                <Col span={10}>
+                                  <Form.Item
+                                    {...field}
+                                    name={[field.name, 'productId']}
+                                    label="Product ID"
+                                    rules={[
+                                      {
+                                        required: true,
+                                        message: 'Product ID is required',
+                                      },
+                                    ]}
+                                  >
+                                    <Input placeholder="Product ID" readOnly />
+                                  </Form.Item>
+                                </Col>
+                              )}
+                            {providerName !== 'moogold' &&
+                              providerName !== 'smileone' && (
+                                <Col span={4}>
+                                  <Form.Item
+                                    {...field}
+                                    name={[field.name, 'productId']}
+                                    label="Product ID"
+                                    rules={[
+                                      {
+                                        required: true,
+                                        message: 'Product ID is required',
+                                      },
+                                    ]}
+                                  >
+                                    <Input placeholder="Product ID" />
+                                  </Form.Item>
+                                </Col>
+                              )}
                             <Col span={2}>
                               {fields.length > 1 && (
                                 <Form.Item label=" ">
@@ -641,49 +891,115 @@ const CreatePackagesPage: React.FC = () => {
                             </Col>
                           </Row>
                           {productDetail && (
-                            <Row style={{ marginTop: 8, padding: '8px 12px', backgroundColor: '#f6f6f6', borderRadius: 4 }}>
+                            <Row
+                              style={{
+                                marginTop: 8,
+                                padding: '8px 12px',
+                                backgroundColor: '#f6f6f6',
+                                borderRadius: 4,
+                              }}
+                            >
                               <Col span={24}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                  <img 
-                                    src={productDetail.Image_URL} 
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                  }}
+                                >
+                                  <img
+                                    src={productDetail.Image_URL}
                                     alt={productDetail.Product_Name}
-                                    style={{ width: 40, height: 40, borderRadius: 4 }}
+                                    style={{
+                                      width: 40,
+                                      height: 40,
+                                      borderRadius: 4,
+                                    }}
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = 'none';
                                     }}
                                   />
                                   <div>
-                                    <div style={{ fontWeight: 500 }}>{productDetail.Product_Name}</div>
-                                    <div style={{ color: '#666', fontSize: '12px' }}>
-                                      {productDetail.Variation?.length} variations available
-                                    </div>
-                                  </div>
-                                </div>
-                              </Col>
-                            </Row>
-                          )}
-                          {providerName === 'smileone' && selectedProductId && smileoneProducts.mobilelegends && (
-                            <Row style={{ marginTop: 8, padding: '8px 12px', backgroundColor: '#f6f6f6', borderRadius: 4 }}>
-                              <Col span={24}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                  <div>
                                     <div style={{ fontWeight: 500 }}>
-                                      {smileoneProducts.mobilelegends.find(p => p.id === selectedProductId)?.spu}
+                                      {productDetail.Product_Name}
                                     </div>
-                                    <div style={{ color: '#666', fontSize: '12px' }}>
-                                      Price: ${smileoneProducts.mobilelegends.find(p => p.id === selectedProductId)?.price} | 
-                                      Cost: ${smileoneProducts.mobilelegends.find(p => p.id === selectedProductId)?.cost_price}
+                                    <div
+                                      style={{
+                                        color: '#666',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      {productDetail.Variation?.length}{' '}
+                                      variations available
                                     </div>
                                   </div>
                                 </div>
                               </Col>
                             </Row>
                           )}
+                          {providerName === 'smileone' &&
+                            selectedProductId &&
+                            smileoneProducts.mobilelegends && (
+                              <Row
+                                style={{
+                                  marginTop: 8,
+                                  padding: '8px 12px',
+                                  backgroundColor: '#f6f6f6',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <Col span={24}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 12,
+                                    }}
+                                  >
+                                    <div>
+                                      <div style={{ fontWeight: 500 }}>
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.spu
+                                        }
+                                      </div>
+                                      <div
+                                        style={{
+                                          color: '#666',
+                                          fontSize: '12px',
+                                        }}
+                                      >
+                                        Price: $
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.price
+                                        }{' '}
+                                        | Cost: $
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.cost_price
+                                        }
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Col>
+                              </Row>
+                            )}
                         </div>
                       );
                     })}
                     <Form.Item>
-                      <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        icon={<PlusOutlined />}
+                        block
+                      >
                         Add API Mapping
                       </Button>
                     </Form.Item>
@@ -691,7 +1007,12 @@ const CreatePackagesPage: React.FC = () => {
                 )}
               </Form.List>
               <Form.Item>
-                <Button type="primary" htmlType="submit" size="large" loading={submitting}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  loading={submitting}
+                >
                   Create Package
                 </Button>
               </Form.Item>
