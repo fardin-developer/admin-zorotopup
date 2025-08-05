@@ -44,14 +44,14 @@ export const authenticatedFetch = async (
   options: RequestInit = {}
 ): Promise<Response> => {
   const token = getAuthToken();
-  
+
   if (!token) {
     throw new Error('No authentication token available');
   }
 
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
     ...options.headers,
   };
 
@@ -71,17 +71,16 @@ function getRootDomain(hostname: string) {
 
 function getApiBaseUrl() {
   const hostname = window.location.hostname;
-  
+
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3000/api/v1';
   }
-  
+
   const rootDomain = getRootDomain(hostname);
   return `https://api.${rootDomain}/api/v1`;
 }
 
-const domain = getApiBaseUrl();
-
+export const domain = getApiBaseUrl();
 
 // API base URL
 export const API_BASE_URL = 'https://game.cptopup.in/api/v1';
@@ -91,26 +90,33 @@ export const API_ENDPOINTS = {
   // User endpoints
   SEND_OTP: `${API_BASE_URL}/admin/send-otp`,
   VERIFY_OTP: `${API_BASE_URL}/admin/verify-otp`,
-  
+
   // Admin endpoints
   ADMIN_DASHBOARD: `${API_BASE_URL}/admin/dashboard`,
-  ADMIN_USERS: (params?: string) => `${API_BASE_URL}/admin/users${params ? `?${params}` : ''}`,
-  
+  ADMIN_API_BALANCE: `${API_BASE_URL}/admin/api-balance`,
+  ADMIN_USERS: (params?: string) =>
+    `${API_BASE_URL}/admin/users${params ? `?${params}` : ''}`,
+
   // Game endpoints
   GAMES_GET_ALL: `${API_BASE_URL}/games/get-all`,
   GAMES_CREATE: `${API_BASE_URL}/games/create`,
   GAMES_UPDATE: (id: string) => `${API_BASE_URL}/games/${id}`,
   GAMES_DELETE: (id: string) => `${API_BASE_URL}/games/${id}`,
   GAMES_GET_BY_ID: (id: string) => `${API_BASE_URL}/games/${id}`,
-  GAMES_CREATE_DIAMOND_PACK: (gameId: string) => `${API_BASE_URL}/games/${gameId}/diamond-pack`,
-  GAMES_GET_DIAMOND_PACKS: (gameId: string) => `${API_BASE_URL}/games/${gameId}/diamond-packs`,
-  GAMES_GET_DIAMOND_PACK_BY_ID: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
-  GAMES_UPDATE_DIAMOND_PACK: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
-  GAMES_DELETE_DIAMOND_PACK: (diamondPackId: string) => `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
+  GAMES_CREATE_DIAMOND_PACK: (gameId: string) =>
+    `${API_BASE_URL}/games/${gameId}/diamond-pack`,
+  GAMES_GET_DIAMOND_PACKS: (gameId: string) =>
+    `${API_BASE_URL}/games/${gameId}/diamond-packs`,
+  GAMES_GET_DIAMOND_PACK_BY_ID: (diamondPackId: string) =>
+    `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
+  GAMES_UPDATE_DIAMOND_PACK: (diamondPackId: string) =>
+    `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
+  GAMES_DELETE_DIAMOND_PACK: (diamondPackId: string) =>
+    `${API_BASE_URL}/games/diamond-pack/${diamondPackId}`,
   MOOGOLD_PRODUCTS: `${API_BASE_URL}/moogold/product/list_product`,
   MOOGOLD_PRODUCT_DETAIL: `${API_BASE_URL}/moogold/product/product_detail`,
   SMILEONE_PRODUCTS: `${API_BASE_URL}/smileone/products`,
-  
+
   // API providers endpoint
   API_LIST: `${API_BASE_URL}/api/list`,
-}; 
+};

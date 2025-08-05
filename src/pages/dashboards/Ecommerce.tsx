@@ -11,7 +11,7 @@ import {
   Spin,
   message,
   Space,
-  Badge
+  Badge,
 } from 'antd';
 import {
   UserOutlined,
@@ -20,7 +20,7 @@ import {
   DollarOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import { ColumnsType } from 'antd/es/table';
 import { authenticatedFetch, API_ENDPOINTS } from '../../utils/auth';
@@ -72,12 +72,60 @@ interface ApiResponse {
   data: DashboardData;
 }
 
+interface ApiBalanceData {
+  mooggoldBalance: string;
+  smileoneBalance: string;
+}
+
+interface ApiBalanceResponse {
+  success: boolean;
+  message: string;
+  data: ApiBalanceData;
+}
+
+const WalletIcon = () => (
+  <div
+    style={{
+      width: '2.75rem',
+      height: '2.75rem',
+      backgroundColor: '#48bb78',
+      borderRadius: '0.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: '1rem',
+      flexShrink: 0,
+    }}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ color: 'white' }}
+    >
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+    </svg>
+  </div>
+);
+
 export const EcommerceDashboardPage: React.FC = () => {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
+  const [apiBalance, setApiBalance] = useState<ApiBalanceData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchApiBalance();
   }, []);
 
   const fetchDashboardData = async (): Promise<void> => {
@@ -85,7 +133,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       setLoading(true);
       const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_DASHBOARD);
       const result: ApiResponse = await response.json();
-      
+
       if (result.success) {
         setDashboardData(result.data);
       } else {
@@ -93,6 +141,27 @@ export const EcommerceDashboardPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      message.error('Error connecting to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchApiBalance = async () => {
+    try {
+      setLoading(true);
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.ADMIN_API_BALANCE
+      );
+      const result: ApiBalanceResponse = await response.json();
+
+      if (result.success) {
+        setApiBalance(result.data);
+      } else {
+        message.error('Failed to fetch api balance');
+      }
+    } catch (error) {
+      console.error('Error fetching api balance:', error);
       message.error('Error connecting to server');
     } finally {
       setLoading(false);
@@ -112,7 +181,9 @@ export const EcommerceDashboardPage: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: 'pending' | 'success' | 'failed'): React.ReactNode => {
+  const getStatusIcon = (
+    status: 'pending' | 'success' | 'failed'
+  ): React.ReactNode => {
     switch (status) {
       case 'success':
         return <CheckCircleOutlined />;
@@ -280,6 +351,14 @@ export const EcommerceDashboardPage: React.FC = () => {
     );
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
   return (
     <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
       <Title level={2} style={{ marginBottom: '24px' }}>
@@ -330,6 +409,69 @@ export const EcommerceDashboardPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Api Balance */}
+      <Card style={{ marginBottom: '24px', width: '500px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <WalletIcon />
+          <div>
+            <p
+              style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                color: '#a0aec0',
+                letterSpacing: '0.05em',
+                margin: 0,
+              }}
+            >
+              SMILEONE
+            </p>
+            <p
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                color: '#525b6bff',
+                margin: 0,
+              }}
+            >
+              {formatCurrency(Number(apiBalance?.smileoneBalance))}
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <WalletIcon />
+          <div>
+            <p
+              style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                color: '#a0aec0',
+                letterSpacing: '0.05em',
+                margin: 0,
+              }}
+            >
+              MOOGOLD
+            </p>
+            <p
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                color: '#525b6bff',
+                margin: 0,
+              }}
+            >
+              {formatCurrency(Number(apiBalance?.mooggoldBalance))}
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {/* Recent Orders Table */}
       <Card

@@ -1,19 +1,13 @@
-import {  Flex,  } from 'antd';
-import { useStylesContext } from '../context';
-import {
-  HomeOutlined,
-  PieChartOutlined,
-} from '@ant-design/icons';
+import { Flex } from 'antd';
+// import { useStylesContext } from '../context';
+import { HomeOutlined, PieChartOutlined } from '@ant-design/icons';
 
-import { DASHBOARD_ITEMS, } from '../constants';
+import { DASHBOARD_ITEMS } from '../constants';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components';
 
-
-
-
 export const AboutPage = () => {
-  const context = useStylesContext();
+  // const context = useStylesContext();
 
   return (
     <div>
@@ -49,7 +43,6 @@ export const AboutPage = () => {
             },
           ]}
         />
-
       </Flex>
     </div>
   );

@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Typography, 
-  Card, 
-  Row, 
-  Col, 
-  Button, 
-  Image, 
-  Tag, 
+import {
+  Typography,
+  Card,
+  Row,
+  Col,
+  Button,
+  Image,
+  Tag,
   message,
   Modal,
   Form,
   Input,
   Select,
-  Space
+  Space,
+  Upload,
+  UploadProps,
+  UploadFile,
 } from 'antd';
-import { EditOutlined, PlusOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  PlusOutlined,
+  MinusCircleOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate } from 'react-router-dom';
 import { authenticatedFetch, API_ENDPOINTS } from '../utils/auth';
@@ -43,7 +52,10 @@ interface ApiResponse {
 interface CreateGamePayload {
   name: string;
   publisher: string;
-  image: string;
+  image: {
+    file: UploadFile;
+    fileList: UploadFile[];
+  };
   validationFields: string[];
 }
 
@@ -98,11 +110,32 @@ const GamePage: React.FC = () => {
   };
 
   const handleCreateSubmit = async (values: CreateGamePayload) => {
+    setCreateLoading(true);
     try {
-      setCreateLoading(true);
+      const formData = new FormData();
+
+      formData.append('name', values.name);
+      formData.append('publisher', values.publisher);
+      formData.append(
+        'validationFields',
+        JSON.stringify(values.validationFields)
+      );
+
+      if (
+        values.image &&
+        values.image.file &&
+        values.image.file.originFileObj
+      ) {
+        formData.append('image', values.image.file.originFileObj);
+      } else {
+        message.error('Please upload a game image.');
+        setCreateLoading(false);
+        return;
+      }
+
       const response = await authenticatedFetch(API_ENDPOINTS.GAMES_CREATE, {
         method: 'POST',
-        body: JSON.stringify(values),
+        body: formData,
       });
 
       const data = await response.json();
@@ -124,21 +157,21 @@ const GamePage: React.FC = () => {
   };
 
   const handleEditGame = (gameId: string) => {
-    const selectedGame = games.find(game => game._id === gameId);
+    const selectedGame = games.find((game) => game._id === gameId);
     if (selectedGame) {
       setEditingGame(selectedGame);
       editForm.setFieldsValue({
         name: selectedGame.name,
         publisher: selectedGame.publisher,
         image: selectedGame.image,
-        validationFields: selectedGame.validationFields
+        validationFields: selectedGame.validationFields,
       });
       setEditModalVisible(true);
     }
   };
 
   const handleDeleteGame = (gameId: string) => {
-    const selectedGame = games.find(game => game._id === gameId);
+    const selectedGame = games.find((game) => game._id === gameId);
     if (selectedGame) {
       setDeletingGame(selectedGame);
       setDeleteModalVisible(true);
@@ -160,9 +193,12 @@ const GamePage: React.FC = () => {
 
     try {
       setDeleteLoading(true);
-      const response = await authenticatedFetch(API_ENDPOINTS.GAMES_DELETE(deletingGame._id), {
-        method: 'DELETE',
-      });
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.GAMES_DELETE(deletingGame._id),
+        {
+          method: 'DELETE',
+        }
+      );
 
       const data = await response.json();
 
@@ -188,10 +224,13 @@ const GamePage: React.FC = () => {
 
     try {
       setEditLoading(true);
-      const response = await authenticatedFetch(API_ENDPOINTS.GAMES_UPDATE(editingGame._id), {
-        method: 'PUT',
-        body: JSON.stringify(values),
-      });
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.GAMES_UPDATE(editingGame._id),
+        {
+          method: 'PUT',
+          body: JSON.stringify(values),
+        }
+      );
 
       const data = await response.json();
 
@@ -216,6 +255,26 @@ const GamePage: React.FC = () => {
     navigate(`/games/game/${gameId}/packages`);
   };
 
+  const dummyRequest: UploadProps['customRequest'] = ({ onSuccess }) => {
+    setTimeout(() => {
+      if (onSuccess) {
+        onSuccess('ok');
+      }
+    }, 0);
+  };
+
+  const normFile = (e: any) => {
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList.length > 0
+      ? {
+          file: e.file,
+          fileList: e.fileList,
+        }
+      : null;
+  };
+
   return (
     <>
       <PageHeader
@@ -227,21 +286,32 @@ const GamePage: React.FC = () => {
       />
 
       <div style={{ marginBottom: 24 }}>
-        <Button type="primary" icon={<PlusOutlined />} size="large" onClick={handleCreateNew}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          size="large"
+          onClick={handleCreateNew}
+        >
           Create New Game
         </Button>
       </div>
 
       <Row gutter={[16, 16]}>
         {loading ? (
-          <Col span={24}><Card loading={true} /></Col>
+          <Col span={24}>
+            <Card loading={true} />
+          </Col>
         ) : games.length === 0 ? (
           <Col span={24}>
             <Card>
               <div style={{ textAlign: 'center', padding: '40px 0' }}>
                 <Title level={4}>No games found</Title>
                 <Paragraph>Start by creating your first game.</Paragraph>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateNew}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCreateNew}
+                >
                   Create Your First Game
                 </Button>
               </div>
@@ -259,7 +329,11 @@ const GamePage: React.FC = () => {
                     <Image
                       alt={game.name}
                       src={game.image}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
                     />
                   </div>
                 }
@@ -290,13 +364,22 @@ const GamePage: React.FC = () => {
                 ]}
               >
                 <Card.Meta
-                  title={<><Title level={4} style={{ margin: 0 }}>{game.name}</Title><Text type="secondary">{game.publisher}</Text></>}
+                  title={
+                    <>
+                      <Title level={4} style={{ margin: 0 }}>
+                        {game.name}
+                      </Title>
+                      <Text type="secondary">{game.publisher}</Text>
+                    </>
+                  }
                   description={
                     <div>
                       <Text strong>Validation Fields:</Text>
                       <div style={{ marginTop: 4 }}>
                         {game.validationFields.map((field) => (
-                          <Tag key={field} color="blue">{field}</Tag>
+                          <Tag key={field} color="blue">
+                            {field}
+                          </Tag>
                         ))}
                       </div>
                       {game.game_id && (
@@ -307,7 +390,8 @@ const GamePage: React.FC = () => {
                       )}
                       <div style={{ marginTop: 8 }}>
                         <Text type="secondary" style={{ fontSize: '12px' }}>
-                          Created: {new Date(game.createdAt).toLocaleDateString()}
+                          Created:{' '}
+                          {new Date(game.createdAt).toLocaleDateString()}
                         </Text>
                       </div>
                     </div>
@@ -334,25 +418,76 @@ const GamePage: React.FC = () => {
           onFinish={handleCreateSubmit}
           initialValues={{ validationFields: ['userId', 'serverId'] }}
         >
-          <Form.Item label="Game Name" name="name" rules={[{ required: true }, { min: 2 }]}>
+          <Form.Item
+            label="Game Name"
+            name="name"
+            rules={[{ required: true }, { min: 2 }]}
+          >
             <Input placeholder="e.g., Mobile Legends" size="large" />
           </Form.Item>
-          <Form.Item label="Publisher" name="publisher" rules={[{ required: true }, { min: 2 }]}>
+          <Form.Item
+            label="Publisher"
+            name="publisher"
+            rules={[{ required: true }, { min: 2 }]}
+          >
             <Input placeholder="e.g., Moonton" size="large" />
           </Form.Item>
-          <Form.Item label="Game Image URL" name="image" rules={[{ required: true }, { type: 'url' }]}>
+
+          {/* <Form.Item label="Game Image URL" name="image" rules={[{ required: true }, { type: 'url' }]}>
             <Input placeholder="https://example.com/image.jpg" size="large" />
+          </Form.Item> */}
+
+          <Form.Item
+            label="Game Image"
+            name="image"
+            valuePropName="fileList"
+            getValueFromEvent={normFile}
+            rules={[{ required: true, message: 'Please upload an image' }]}
+          >
+            <Upload.Dragger
+              name="logo"
+              customRequest={dummyRequest}
+              listType="picture"
+              maxCount={1}
+              accept="image/*"
+            >
+              <p className="ant-upload-drag-icon">
+                <UploadOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Click or drag file to this area to upload
+              </p>
+              <p className="ant-upload-hint">
+                Support for a single image file. Strictly prohibit from
+                uploading company data or other band files
+              </p>
+            </Upload.Dragger>
           </Form.Item>
+
           <Form.Item label="Validation Fields (Max 3)">
             <Form.List name="validationFields">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...rest }) => (
-                    <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item {...rest} name={[name]} rules={[{ required: true }]}>
-                        <Select placeholder="Select validation field" size="large" allowClear>
-                          {validationFieldOptions.map(option => (
-                            <Option key={option} value={option}>{option}</Option>
+                    <Space
+                      key={key}
+                      align="baseline"
+                      style={{ display: 'flex', marginBottom: 8 }}
+                    >
+                      <Form.Item
+                        {...rest}
+                        name={[name]}
+                        rules={[{ required: true }]}
+                      >
+                        <Select
+                          placeholder="Select validation field"
+                          size="large"
+                          allowClear
+                        >
+                          {validationFieldOptions.map((option) => (
+                            <Option key={option} value={option}>
+                              {option}
+                            </Option>
                           ))}
                         </Select>
                       </Form.Item>
@@ -377,10 +512,19 @@ const GamePage: React.FC = () => {
           </Form.Item>
           <Form.Item style={{ marginTop: 24 }}>
             <Space size="middle">
-              <Button type="primary" htmlType="submit" loading={createLoading} size="large">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={createLoading}
+                size="large"
+              >
                 Create Game
               </Button>
-              <Button onClick={handleCreateCancel} disabled={createLoading} size="large">
+              <Button
+                onClick={handleCreateCancel}
+                disabled={createLoading}
+                size="large"
+              >
                 Cancel
               </Button>
             </Space>
@@ -402,13 +546,25 @@ const GamePage: React.FC = () => {
         destroyOnClose
       >
         <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
-          <Form.Item label="Game Name" name="name" rules={[{ required: true }, { min: 2 }]}>
+          <Form.Item
+            label="Game Name"
+            name="name"
+            rules={[{ required: true }, { min: 2 }]}
+          >
             <Input size="large" />
           </Form.Item>
-          <Form.Item label="Publisher" name="publisher" rules={[{ required: true }, { min: 2 }]}>
+          <Form.Item
+            label="Publisher"
+            name="publisher"
+            rules={[{ required: true }, { min: 2 }]}
+          >
             <Input size="large" />
           </Form.Item>
-          <Form.Item label="Game Image URL" name="image" rules={[{ required: true }, { type: 'url' }]}>
+          <Form.Item
+            label="Game Image URL"
+            name="image"
+            rules={[{ required: true }, { type: 'url' }]}
+          >
             <Input size="large" />
           </Form.Item>
           <Form.Item label="Validation Fields (Max 3)">
@@ -416,11 +572,25 @@ const GamePage: React.FC = () => {
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...rest }) => (
-                    <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 8 }}>
-                      <Form.Item {...rest} name={[name]} rules={[{ required: true }]}>
-                        <Select placeholder="Select validation field" size="large" allowClear>
-                          {validationFieldOptions.map(option => (
-                            <Option key={option} value={option}>{option}</Option>
+                    <Space
+                      key={key}
+                      align="baseline"
+                      style={{ display: 'flex', marginBottom: 8 }}
+                    >
+                      <Form.Item
+                        {...rest}
+                        name={[name]}
+                        rules={[{ required: true }]}
+                      >
+                        <Select
+                          placeholder="Select validation field"
+                          size="large"
+                          allowClear
+                        >
+                          {validationFieldOptions.map((option) => (
+                            <Option key={option} value={option}>
+                              {option}
+                            </Option>
                           ))}
                         </Select>
                       </Form.Item>
@@ -445,10 +615,19 @@ const GamePage: React.FC = () => {
           </Form.Item>
           <Form.Item style={{ marginTop: 24 }}>
             <Space size="middle">
-              <Button type="primary" htmlType="submit" loading={editLoading} size="large">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={editLoading}
+                size="large"
+              >
                 Update Game
               </Button>
-              <Button onClick={() => setEditModalVisible(false)} disabled={editLoading} size="large">
+              <Button
+                onClick={() => setEditModalVisible(false)}
+                disabled={editLoading}
+                size="large"
+              >
                 Cancel
               </Button>
             </Space>
@@ -462,7 +641,11 @@ const GamePage: React.FC = () => {
         open={deleteModalVisible}
         onCancel={handleDeleteCancel}
         footer={[
-          <Button key="cancel" onClick={handleDeleteCancel} disabled={deleteLoading}>
+          <Button
+            key="cancel"
+            onClick={handleDeleteCancel}
+            disabled={deleteLoading}
+          >
             Cancel
           </Button>,
           <Button
@@ -481,17 +664,31 @@ const GamePage: React.FC = () => {
       >
         <div style={{ marginBottom: 16 }}>
           <Text strong>Are you sure you want to delete this game?</Text>
-          <div style={{ marginTop: 8, padding: 12, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
-            <Text strong>Game: </Text><Text>{deletingGame?.name}</Text><br />
-            <Text strong>Publisher: </Text><Text>{deletingGame?.publisher}</Text>
+          <div
+            style={{
+              marginTop: 8,
+              padding: 12,
+              backgroundColor: '#f5f5f5',
+              borderRadius: 6,
+            }}
+          >
+            <Text strong>Game: </Text>
+            <Text>{deletingGame?.name}</Text>
+            <br />
+            <Text strong>Publisher: </Text>
+            <Text>{deletingGame?.publisher}</Text>
           </div>
         </div>
         <div style={{ marginBottom: 16 }}>
-          <Text type="danger" strong>⚠️ This action cannot be undone!</Text>
+          <Text type="danger" strong>
+            ⚠️ This action cannot be undone!
+          </Text>
         </div>
         <div>
           <Text>To confirm deletion, please type: </Text>
-          <Text code strong>fardin-delete</Text>
+          <Text code strong>
+            fardin-delete
+          </Text>
           <Input
             placeholder="Type fardin-delete to confirm"
             value={deleteConfirmation}

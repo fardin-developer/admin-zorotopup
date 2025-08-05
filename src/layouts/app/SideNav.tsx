@@ -32,30 +32,19 @@ const getItem = (
 };
 
 const items: MenuProps['items'] = [
-  getItem(
-    <Link to="/">Dashboard</Link>,
-    'dashboard',
-    <PieChartOutlined />
-  ),
+  getItem(<Link to="/">Dashboard</Link>, 'dashboard', <PieChartOutlined />),
   getItem('Games', 'games', <PlayCircleOutlined />, [
     getItem(<Link to="/games/game">Game</Link>, 'game', null),
-    getItem(<Link to="/games/create-packages">Create Packages</Link>, 'create-packages', null),
+    getItem(
+      <Link to="/games/create-packages">Create Packages</Link>,
+      'create-packages',
+      null
+    ),
   ]),
-  getItem(
-    <Link to="/user">User</Link>,
-    'user',
-    <UserOutlined />
-  ),
-  getItem(
-    <Link to="/about">About</Link>,
-    'about',
-    <InfoCircleOutlined />
-  ),
-  getItem(
-    <Link to="/sitemap">Sitemap</Link>,
-    'sitemap',
-    <BranchesOutlined />
-  ),
+  getItem(<Link to="/gateway">Gateway</Link>, 'gateway', <PieChartOutlined />),
+  getItem(<Link to="/user">User</Link>, 'user', <UserOutlined />),
+  getItem(<Link to="/about">About</Link>, 'about', <InfoCircleOutlined />),
+  getItem(<Link to="/sitemap">Sitemap</Link>, 'sitemap', <BranchesOutlined />),
 
   // Commented out unused navigation items
   /*
@@ -218,7 +207,7 @@ const SideNav = ({ ...others }: SideNavProps) => {
 
   useEffect(() => {
     const paths = pathname.split('/').filter(Boolean);
-    
+
     // Set current based on the route
     if (pathname === '/') {
       setCurrent('dashboard');
@@ -230,6 +219,9 @@ const SideNav = ({ ...others }: SideNavProps) => {
       } else if (pathname.includes('create-packages')) {
         setCurrent('create-packages');
       }
+    } else if (pathname.startsWith('/gateway')) {
+      setCurrent('gateway');
+      setOpenKeys([]);
     } else if (pathname.startsWith('/user')) {
       setCurrent('user');
       setOpenKeys([]);
