@@ -49,11 +49,19 @@ export const authenticatedFetch = async (
     throw new Error('No authentication token available');
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    ...options.headers,
   };
+
+  // Only add Content-Type if not FormData
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Merge with any existing headers
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
 
   return fetch(url, {
     ...options,
