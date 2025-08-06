@@ -25,7 +25,7 @@ import {
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_ENDPOINTS, API_BASE_URL, authenticatedFetch } from '../utils/auth';
-import type { UploadProps, UploadFile } from 'antd/es/upload/interface';
+import type { UploadProps } from 'antd/es/upload/interface';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
