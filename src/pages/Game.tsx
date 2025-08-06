@@ -36,11 +36,17 @@ interface Game {
   name: string;
   image: string;
   publisher: string;
+  productId: string;
   validationFields: string[];
   createdAt: string;
   updatedAt: string;
   __v: number;
   game_id?: string;
+}
+
+interface Product {
+  ID: string;
+  post_title: string;
 }
 
 interface ApiResponse {
@@ -52,10 +58,8 @@ interface ApiResponse {
 interface CreateGamePayload {
   name: string;
   publisher: string;
-  image: {
-    file: UploadFile;
-    fileList: UploadFile[];
-  };
+  productId: string;
+  image: UploadFile[];
   validationFields: string[];
 }
 
@@ -65,6 +69,8 @@ const GamePage: React.FC = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -79,6 +85,7 @@ const GamePage: React.FC = () => {
 
   useEffect(() => {
     fetchGames();
+    fetchProducts();
   }, []);
 
   const fetchGames = async () => {
@@ -100,6 +107,33 @@ const GamePage: React.FC = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const response = await authenticatedFetch(API_ENDPOINTS.MOOGOLD_PRODUCTS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: 'product/list_product',
+          category_id: 50,
+        }),
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setProducts(data.data);
+      } else {
+        message.error('Failed to fetch products');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      message.error('Failed to fetch products');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
   const handleCreateNew = () => {
     setCreateModalVisible(true);
   };
@@ -116,17 +150,14 @@ const GamePage: React.FC = () => {
 
       formData.append('name', values.name);
       formData.append('publisher', values.publisher);
+      formData.append('productId', values.productId);
       formData.append(
         'validationFields',
         JSON.stringify(values.validationFields)
       );
 
-      if (
-        values.image &&
-        values.image.file &&
-        values.image.file.originFileObj
-      ) {
-        formData.append('image', values.image.file.originFileObj);
+      if (values.image && values.image.length > 0 && values.image[0].originFileObj) {
+        formData.append('image', values.image[0].originFileObj);
       } else {
         message.error('Please upload a game image.');
         setCreateLoading(false);
@@ -163,6 +194,7 @@ const GamePage: React.FC = () => {
       editForm.setFieldsValue({
         name: selectedGame.name,
         publisher: selectedGame.publisher,
+        productId: selectedGame.productId,
         image: selectedGame.image,
         validationFields: selectedGame.validationFields,
       });
@@ -228,7 +260,16 @@ const GamePage: React.FC = () => {
         API_ENDPOINTS.GAMES_UPDATE(editingGame._id),
         {
           method: 'PUT',
-          body: JSON.stringify(values),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: values.name,
+            publisher: values.publisher,
+            productId: values.productId,
+            image: values.image,
+            validationFields: values.validationFields,
+          }),
         }
       );
 
@@ -267,12 +308,7 @@ const GamePage: React.FC = () => {
     if (Array.isArray(e)) {
       return e;
     }
-    return e && e.fileList.length > 0
-      ? {
-          file: e.file,
-          fileList: e.fileList,
-        }
-      : null;
+    return e?.fileList || [];
   };
 
   return (
@@ -382,11 +418,15 @@ const GamePage: React.FC = () => {
                           </Tag>
                         ))}
                       </div>
+                      <div style={{ marginTop: 4 }}>
+                        <Text strong>Product ID: </Text>
+                        <Text code>{game.productId}</Text>
+                      </div>
                       {game.game_id && (
-                        <>
+                        <div style={{ marginTop: 4 }}>
                           <Text strong>Game ID: </Text>
                           <Text code>{game.game_id}</Text>
-                        </>
+                        </div>
                       )}
                       <div style={{ marginTop: 8 }}>
                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -431,6 +471,26 @@ const GamePage: React.FC = () => {
             rules={[{ required: true }, { min: 2 }]}
           >
             <Input placeholder="e.g., Moonton" size="large" />
+          </Form.Item>
+
+          <Form.Item
+            label="Product ID"
+            name="productId"
+            rules={[{ required: true, message: 'Please select a product' }]}
+          >
+            <Select
+              placeholder="Select a product"
+              size="large"
+              loading={productsLoading}
+              showSearch
+              optionFilterProp="children"
+            >
+              {products.map((product) => (
+                <Option key={product.ID} value={product.ID}>
+                  {product.post_title} (ID: {product.ID})
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
 
           {/* <Form.Item label="Game Image URL" name="image" rules={[{ required: true }, { type: 'url' }]}>
@@ -560,6 +620,27 @@ const GamePage: React.FC = () => {
           >
             <Input size="large" />
           </Form.Item>
+
+          <Form.Item
+            label="Product ID"
+            name="productId"
+            rules={[{ required: true, message: 'Please select a product' }]}
+          >
+            <Select
+              placeholder="Select a product"
+              size="large"
+              loading={productsLoading}
+              showSearch
+              optionFilterProp="children"
+            >
+              {products.map((product) => (
+                <Option key={product.ID} value={product.ID}>
+                  {product.post_title} (ID: {product.ID})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
           <Form.Item
             label="Game Image URL"
             name="image"
