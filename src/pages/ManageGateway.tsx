@@ -59,7 +59,7 @@ const gateways: Gateway[] = [
 ];
 
 const ManageGateway = () => {
-  const [selectedGateway, setSelectedGateway] = useState(gateways[0].id);
+  const [selectedGateway, setSelectedGateway] = useState(gateways[1].id);
 
   const handleSave = () => {
     console.log(`Saving selected gateway: ${selectedGateway}`);
