@@ -61,6 +61,10 @@ export const authenticatedFetch = async (
   // Merge with any existing headers
   if (options.headers) {
     Object.assign(headers, options.headers);
+    // Remove Content-Type if it was added by options.headers and we have FormData
+    if (options.body instanceof FormData && headers['Content-Type']) {
+      delete headers['Content-Type'];
+    }
   }
 
   return fetch(url, {

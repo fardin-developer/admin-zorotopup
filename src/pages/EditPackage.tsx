@@ -66,7 +66,12 @@ interface ApiProvider {
 }
 
 interface ApiMapping {
-  apiProvider: ApiProvider;
+  apiProvider: {
+    _id: string;
+    name: string;
+    apiUrl: string;
+    description: string;
+  };
   productId: string;
   _id: string;
 }
@@ -148,7 +153,7 @@ const EditPackagePage: React.FC = () => {
       if (data.success) {
         setPackageData(data.diamondPack);
 
-        // Prepare form data - only set productId initially, no product selection
+        // Prepare form data - map API response format to form format
         const formData = {
           gameId: data.diamondPack.game,
           amount: data.diamondPack.amount,
@@ -158,7 +163,7 @@ const EditPackagePage: React.FC = () => {
           description: data.diamondPack.description,
           status: data.diamondPack.status,
           apiMappings: data.diamondPack.apiMappings.map((mapping) => ({
-            apiProvider: mapping.apiProvider.id,
+            apiProvider: mapping.apiProvider._id, // Use _id from the nested apiProvider object
             productId: mapping.productId,
           })),
         };
@@ -251,8 +256,8 @@ const EditPackagePage: React.FC = () => {
   useEffect(() => {
     if (gameId && packageId) {
       fetchGames();
-      fetchPackageData();
       fetchApiProviders();
+      fetchPackageData();
     }
   }, [gameId, packageId]);
 
@@ -389,12 +394,12 @@ const EditPackagePage: React.FC = () => {
       [fieldName]: false,
     }));
 
-    // Reset to original productId if available
+    // Reset to original values if available
     if (packageData?.apiMappings[fieldName]) {
       const currentValues = form.getFieldsValue();
       const apiMappings = [...currentValues.apiMappings];
       apiMappings[fieldName] = {
-        apiProvider: packageData.apiMappings[fieldName].apiProvider.id,
+        apiProvider: packageData.apiMappings[fieldName].apiProvider._id,
         productId: packageData.apiMappings[fieldName].productId,
       };
       form.setFieldsValue({ apiMappings });
@@ -716,7 +721,7 @@ const EditPackagePage: React.FC = () => {
                                     <Form.Item
                                       {...field}
                                       name={[field.name, 'productTitle']}
-                                      label="Product"
+                                      label="Product Title"
                                       rules={[
                                         {
                                           required: true,
@@ -761,90 +766,81 @@ const EditPackagePage: React.FC = () => {
                                     </Form.Item>
                                   )}
                                 </Col>
-                                {providerName === 'moogold' &&
-                                  selectedProductId && (
-                                    <Col span={8}>
-                                      <Form.Item
-                                        {...field}
-                                        name={[field.name, 'variationId']}
-                                        label="Variation"
-                                        rules={[
-                                          {
-                                            required: true,
-                                            message: 'Select Variation',
-                                          },
-                                        ]}
+                                <Col span={6}>
+                                  {providerName === 'moogold' &&
+                                  selectedProductId ? (
+                                    <Form.Item
+                                      {...field}
+                                      name={[field.name, 'variationId']}
+                                      label="Product ID (Variation)"
+                                      rules={[
+                                        {
+                                          required: true,
+                                          message: 'Select Variation',
+                                        },
+                                      ]}
+                                    >
+                                      <Select
+                                        placeholder="Select Variation"
+                                        loading={
+                                          loadingVariations[selectedProductId]
+                                        }
+                                        onChange={(value) =>
+                                          handleVariationSelect(
+                                            value,
+                                            field.name
+                                          )
+                                        }
+                                        optionLabelProp="label"
                                       >
-                                        <Select
-                                          placeholder="Select Variation"
-                                          loading={
-                                            loadingVariations[selectedProductId]
-                                          }
-                                          onChange={(value) =>
-                                            handleVariationSelect(
-                                              value,
-                                              field.name
-                                            )
-                                          }
-                                          optionLabelProp="label"
-                                        >
-                                          {productDetail?.Variation?.map(
-                                            (variation) => (
-                                              <Option
-                                                key={variation.variation_id}
-                                                value={variation.variation_id.toString()}
-                                                label={`${variation.variation_name} - ${variation.variation_price}`}
-                                              >
+                                        {productDetail?.Variation?.map(
+                                          (variation) => (
+                                            <Option
+                                              key={variation.variation_id}
+                                              value={variation.variation_id.toString()}
+                                              label={`${variation.variation_name} - ID: ${variation.variation_id}`}
+                                            >
+                                              <div style={{ padding: '8px 0' }}>
                                                 <div
-                                                  style={{ padding: '8px 0' }}
+                                                  style={{
+                                                    fontWeight: 500,
+                                                    marginBottom: 4,
+                                                  }}
                                                 >
-                                                  <div
-                                                    style={{
-                                                      fontWeight: 500,
-                                                      marginBottom: 4,
-                                                    }}
-                                                  >
-                                                    {variation.variation_name}
-                                                  </div>
-                                                  <div
-                                                    style={{
-                                                      display: 'flex',
-                                                      justifyContent:
-                                                        'space-between',
-                                                      alignItems: 'center',
-                                                    }}
-                                                  >
-                                                    <span
-                                                      style={{
-                                                        color: '#666',
-                                                        fontSize: '12px',
-                                                      }}
-                                                    >
-                                                      ID:{' '}
-                                                      {variation.variation_id}
-                                                    </span>
-                                                    <span
-                                                      style={{
-                                                        color: '#52c41a',
-                                                        fontWeight: 'bold',
-                                                      }}
-                                                    >
-                                                      $
-                                                      {
-                                                        variation.variation_price
-                                                      }
-                                                    </span>
-                                                  </div>
+                                                  {variation.variation_name}
                                                 </div>
-                                              </Option>
-                                            )
-                                          )}
-                                        </Select>
-                                      </Form.Item>
-                                    </Col>
-                                  )}
-                                {providerName !== 'moogold' && (
-                                  <Col span={4}>
+                                                <div
+                                                  style={{
+                                                    display: 'flex',
+                                                    justifyContent:
+                                                      'space-between',
+                                                    alignItems: 'center',
+                                                  }}
+                                                >
+                                                  <span
+                                                    style={{
+                                                      color: '#666',
+                                                      fontSize: '12px',
+                                                    }}
+                                                  >
+                                                    ID: {variation.variation_id}
+                                                  </span>
+                                                  <span
+                                                    style={{
+                                                      color: '#52c41a',
+                                                      fontWeight: 'bold',
+                                                    }}
+                                                  >
+                                                    ${variation.variation_price}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </Option>
+                                          )
+                                        )}
+                                      </Select>
+                                    </Form.Item>
+                                  ) : (
                                     <Form.Item
                                       {...field}
                                       name={[field.name, 'productId']}
@@ -858,8 +854,8 @@ const EditPackagePage: React.FC = () => {
                                     >
                                       <Input placeholder="Product ID" />
                                     </Form.Item>
-                                  </Col>
-                                )}
+                                  )}
+                                </Col>
                               </>
                             )}
 

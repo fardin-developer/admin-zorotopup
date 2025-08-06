@@ -195,7 +195,7 @@ const GamePage: React.FC = () => {
         name: selectedGame.name,
         publisher: selectedGame.publisher,
         productId: selectedGame.productId,
-        image: selectedGame.image,
+        image: [], // Reset file upload field
         validationFields: selectedGame.validationFields,
       });
       setEditModalVisible(true);
@@ -256,20 +256,27 @@ const GamePage: React.FC = () => {
 
     try {
       setEditLoading(true);
+      const formData = new FormData();
+
+      formData.append('name', values.name);
+      formData.append('publisher', values.publisher);
+      formData.append('productId', values.productId);
+      formData.append(
+        'validationFields',
+        JSON.stringify(values.validationFields)
+      );
+
+      // Handle image upload - if new file is uploaded, use it; otherwise keep current
+      if (values.image && values.image.length > 0 && values.image[0].originFileObj) {
+        formData.append('image', values.image[0].originFileObj);
+      }
+      // If no new image is uploaded, we'll let the backend keep the existing image
+
       const response = await authenticatedFetch(
         API_ENDPOINTS.GAMES_UPDATE(editingGame._id),
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: values.name,
-            publisher: values.publisher,
-            productId: values.productId,
-            image: values.image,
-            validationFields: values.validationFields,
-          }),
+          body: formData,
         }
       );
 
@@ -642,11 +649,29 @@ const GamePage: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            label="Game Image URL"
+            label="Game Image"
             name="image"
-            rules={[{ required: true }, { type: 'url' }]}
+            valuePropName="fileList"
+            getValueFromEvent={normFile}
+            rules={[{ required: false, message: 'Upload new image or keep current' }]}
           >
-            <Input size="large" />
+            <Upload.Dragger
+              name="logo"
+              customRequest={dummyRequest}
+              listType="picture"
+              maxCount={1}
+              accept="image/*"
+            >
+              <p className="ant-upload-drag-icon">
+                <UploadOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Click or drag file to upload new image
+              </p>
+              <p className="ant-upload-hint">
+                Leave empty to keep current image
+              </p>
+            </Upload.Dragger>
           </Form.Item>
           <Form.Item label="Validation Fields (Max 3)">
             <Form.List name="validationFields">
