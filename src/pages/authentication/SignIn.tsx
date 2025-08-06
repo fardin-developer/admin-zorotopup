@@ -19,10 +19,13 @@ import { Logo } from '../../components';
 import { useMediaQuery } from 'react-responsive';
 import { PATH_AUTH, PATH_DASHBOARD } from '../../constants';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../../utils/auth';
 
 const { Title, Text, Link } = Typography;
+
+// Add this to your environment variables or constants
+const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6LdCb5wrAAAAAGzB6YHNKOHA17JAZRUBW1y1aZGe';
 
 type SendOtpFieldType = {
   phone?: string;
@@ -44,6 +47,16 @@ interface LoginResponse {
   isNewUser: boolean;
 }
 
+// Declare grecaptcha for TypeScript
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (callback: () => void) => void;
+      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 export const SignInPage = () => {
   const {
     token: { colorPrimary },
@@ -56,16 +69,80 @@ export const SignInPage = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [sendOtpForm] = Form.useForm();
   const [verifyOtpForm] = Form.useForm();
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+
+  // Load reCAPTCHA script
+  useEffect(() => {
+    const loadRecaptcha = () => {
+      if (window.grecaptcha) {
+        setRecaptchaLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        window.grecaptcha.ready(() => {
+          setRecaptchaLoaded(true);
+        });
+      };
+      script.onerror = () => {
+        console.error('Failed to load reCAPTCHA script');
+        message.error('Failed to load security verification. Please refresh the page.');
+      };
+      document.head.appendChild(script);
+    };
+
+    loadRecaptcha();
+
+    return () => {
+      // Cleanup script if component unmounts
+      const existingScript = document.querySelector(
+        `script[src*="recaptcha/api.js"]`
+      );
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
+  const executeRecaptcha = async (action: string): Promise<string | null> => {
+    if (!recaptchaLoaded || !window.grecaptcha) {
+      message.error('Security verification not loaded. Please refresh the page.');
+      return null;
+    }
+
+    try {
+      const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+      return token;
+    } catch (error) {
+      console.error('reCAPTCHA execution failed:', error);
+      message.error('Security verification failed. Please try again.');
+      return null;
+    }
+  };
 
   const onSendOtp = async (values: SendOtpFieldType) => {
     try {
       setLoading(true);
+      
+      // Execute reCAPTCHA for send OTP action
+      const recaptchaToken = await executeRecaptcha('send_otp');
+      if (!recaptchaToken) {
+        return;
+      }
+
       const response = await fetch(API_ENDPOINTS.SEND_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone: values.phone }),
+        body: JSON.stringify({ 
+          phone: values.phone,
+          recaptchaToken: recaptchaToken,
+        }),
       });
 
       const data = await response.json();
@@ -88,6 +165,13 @@ export const SignInPage = () => {
   const onVerifyOtp = async (values: VerifyOtpFieldType) => {
     try {
       setLoading(true);
+      
+      // Execute reCAPTCHA for verify OTP action
+      const recaptchaToken = await executeRecaptcha('verify_otp');
+      if (!recaptchaToken) {
+        return;
+      }
+
       const response = await fetch(API_ENDPOINTS.VERIFY_OTP, {
         method: 'POST',
         headers: {
@@ -96,6 +180,7 @@ export const SignInPage = () => {
         body: JSON.stringify({
           phone: phoneNumber,
           otp: values.otp,
+          recaptchaToken: recaptchaToken,
         }),
       });
 
@@ -223,11 +308,19 @@ export const SignInPage = () => {
                   htmlType="submit"
                   size="large"
                   loading={loading}
+                  disabled={!recaptchaLoaded}
                   block
                 >
-                  Send OTP
+                  {recaptchaLoaded ? 'Send OTP' : 'Loading Security...'}
                 </Button>
               </Form.Item>
+              {!recaptchaLoaded && (
+                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Loading security verification...
+                  </Text>
+                </div>
+              )}
             </Form>
           )}
 
@@ -263,30 +356,53 @@ export const SignInPage = () => {
                 />
               </Form.Item>
               <Form.Item>
-                                 <Flex gap="small" vertical>
-                   <Button
-                     type="primary"
-                     htmlType="submit"
-                     size="large"
-                     loading={loading}
-                     block
-                   >
-                     Verify OTP & Login
-                   </Button>
-                   <Button
-                     type="default"
-                     size="large"
-                     onClick={handleBackToPhone}
-                     block
-                   >
-                     Change Phone Number
-                   </Button>
-                 </Flex>
+                <Flex gap="small" vertical>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    loading={loading}
+                    disabled={!recaptchaLoaded}
+                    block
+                  >
+                    {recaptchaLoaded ? 'Verify OTP & Login' : 'Loading Security...'}
+                  </Button>
+                  <Button
+                    type="default"
+                    size="large"
+                    onClick={handleBackToPhone}
+                    block
+                  >
+                    Change Phone Number
+                  </Button>
+                </Flex>
               </Form.Item>
+              {!recaptchaLoaded && (
+                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Loading security verification...
+                  </Text>
+                </div>
+              )}
             </Form>
           )}
 
           <Divider className="m-0">or</Divider>
+          
+          {/* reCAPTCHA branding (required by Google) */}
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <Text type="secondary" style={{ fontSize: '10px' }}>
+              This site is protected by reCAPTCHA and the Google{' '}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </a>{' '}
+              and{' '}
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">
+                Terms of Service
+              </a>{' '}
+              apply.
+            </Text>
+          </div>
         </Flex>
       </Col>
     </Row>

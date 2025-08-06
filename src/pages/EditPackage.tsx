@@ -12,16 +12,20 @@ import {
   Divider,
   message,
   Spin,
+  Upload,
+  Image,
 } from 'antd';
 import {
   MinusCircleOutlined,
   PlusOutlined,
   ArrowLeftOutlined,
   EditOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_ENDPOINTS, API_BASE_URL, authenticatedFetch } from '../utils/auth';
+import type { UploadProps, UploadFile } from 'antd/es/upload/interface';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
@@ -159,7 +163,7 @@ const EditPackagePage: React.FC = () => {
           amount: data.diamondPack.amount,
           commission: data.diamondPack.commission,
           cashback: data.diamondPack.cashback,
-          logo: data.diamondPack.logo,
+          logo: [], // Initialize as empty array for Upload component
           description: data.diamondPack.description,
           status: data.diamondPack.status,
           apiMappings: data.diamondPack.apiMappings.map((mapping) => ({
@@ -411,14 +415,42 @@ const EditPackagePage: React.FC = () => {
     try {
       const { gameId: formGameId, ...packageUpdateData } = values;
 
-      const response = await fetch(
-        `${API_BASE_URL}/games/diamond-pack/${packageId}`,
+      if (!packageId) {
+        message.error('Package ID is missing');
+        setSubmitting(false);
+        return;
+      }
+
+      const formData = new FormData();
+
+      formData.append('amount', String(packageUpdateData.amount));
+      formData.append('commission', String(packageUpdateData.commission));
+      formData.append('cashback', String(packageUpdateData.cashback));
+      formData.append('status', packageUpdateData.status);
+      formData.append('description', packageUpdateData.description);
+
+      // Handle logo upload - if new file is uploaded, use it; otherwise keep current
+      if (packageUpdateData.logo && packageUpdateData.logo.length > 0 && packageUpdateData.logo[0].originFileObj) {
+        formData.append('image', packageUpdateData.logo[0].originFileObj);
+      } else {
+        // If no new file is uploaded, send the current logo URL
+        formData.append('logo', packageUpdateData.logo);
+      }
+
+      // Send apiMappings as individual fields in array format
+      packageUpdateData.apiMappings.forEach((mapping: any, index: number) => {
+        formData.append(`apiMappings[${index}][apiProvider]`, mapping.apiProvider);
+        formData.append(`apiMappings[${index}][productId]`, mapping.productId);
+        if (mapping.productTitle) {
+          formData.append(`apiMappings[${index}][productTitle]`, mapping.productTitle);
+        }
+      });
+
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.GAMES_UPDATE_DIAMOND_PACK(packageId),
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(packageUpdateData),
+          body: formData,
         }
       );
 
@@ -440,6 +472,19 @@ const EditPackagePage: React.FC = () => {
 
   const handleBackToPackages = () => {
     navigate(`/games/game/${gameId}/packages`);
+  };
+
+  const dummyRequest: UploadProps['customRequest'] = ({ onSuccess }) => {
+    setTimeout(() => {
+      if (onSuccess) onSuccess('ok');
+    }, 0);
+  };
+
+  const normFile = (e: any) => {
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e?.fileList || [];
   };
 
   if (loading || loadingApiProviders) {
@@ -581,13 +626,30 @@ const EditPackagePage: React.FC = () => {
                 <Col span={12}>
                   <Form.Item
                     name="logo"
-                    label="Logo URL"
+                    label="Logo"
+                    valuePropName="fileList"
+                    getValueFromEvent={normFile}
                     rules={[
-                      { required: true, message: 'Please enter logo URL' },
-                      { type: 'url', message: 'Please enter a valid URL' },
+                      { required: true, message: 'Please upload a logo' },
                     ]}
                   >
-                    <Input placeholder="https://example.com/logo.png" />
+                    <Upload.Dragger
+                      name="image"
+                      customRequest={dummyRequest}
+                      listType="picture"
+                      maxCount={1}
+                      accept="image/*"
+                    >
+                      <p className="ant-upload-drag-icon">
+                        <UploadOutlined />
+                      </p>
+                      <p className="ant-upload-text">
+                        Click or drag file to this area
+                      </p>
+                      <p className="ant-upload-hint">
+                        Support for a single image file.
+                      </p>
+                    </Upload.Dragger>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -605,6 +667,34 @@ const EditPackagePage: React.FC = () => {
                   </Form.Item>
                 </Col>
               </Row>
+              {/* Current Logo Preview */}
+              {packageData?.logo && (
+                <Row gutter={16}>
+                  <Col span={24}>
+                    <div style={{ marginBottom: 16 }}>
+                      <Title level={5}>Current Logo:</Title>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Image
+                          src={packageData.logo}
+                          alt="Current package logo"
+                          width={100}
+                          height={100}
+                          style={{ objectFit: 'cover', borderRadius: 8 }}
+                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                        />
+                        <div>
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            Current Package Logo
+                          </div>
+                          <div style={{ color: '#666', fontSize: '12px' }}>
+                            Upload a new image to replace this logo
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              )}
               <Form.Item
                 name="description"
                 label="Description"

@@ -109,10 +109,7 @@ interface PackageFormValues {
   amount: number;
   commission: number;
   cashback: number;
-  logo: {
-    file: UploadFile;
-    fileList: UploadFile[];
-  };
+  logo: UploadFile[];
   status: 'active' | 'inactive';
   description: string;
   apiMappings: any[];
@@ -336,7 +333,7 @@ const CreatePackagesPage: React.FC = () => {
     }
 
     // Fetch products if smileone is selected and products not already loaded
-    if (providerName === 'smileone' && !smileoneProducts.mobilelegends) {
+    if (providerName === 'smileOne' && !smileoneProducts.mobilelegends) {
       fetchSmileoneProducts('mobilelegends');
     }
   };
@@ -359,13 +356,27 @@ const CreatePackagesPage: React.FC = () => {
     // Auto-fill the product ID when a product is selected
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
-    apiMappings[fieldName] = {
-      ...apiMappings[fieldName],
-      productTitle: value,
-      selectedProductId: productId,
-      productId: productId, // Set productId for smileone
-      variationId: undefined, // Clear variation when product changes
-    };
+    
+    if (providerName === 'smileone') {
+      // For smileone, directly use the product ID without variations
+      apiMappings[fieldName] = {
+        ...apiMappings[fieldName],
+        productTitle: value,
+        selectedProductId: productId,
+        productId: productId, // Use the product ID directly
+        variationId: undefined, // Not needed for smileone
+      };
+    } else {
+      // For moogold and others
+      apiMappings[fieldName] = {
+        ...apiMappings[fieldName],
+        productTitle: value,
+        selectedProductId: productId,
+        productId: productId, // Set productId for smileone
+        variationId: undefined, // Clear variation when product changes
+      };
+    }
+    
     form.setFieldsValue({ apiMappings });
 
     // Fetch product variations only for moogold
@@ -380,7 +391,7 @@ const CreatePackagesPage: React.FC = () => {
     apiMappings[fieldName] = {
       ...apiMappings[fieldName],
       variationId: variationId,
-      productId: variationId, // Use variation_id as the final productId
+      productId: variationId, // Use variation_id as the final productId for moogold
     };
     form.setFieldsValue({ apiMappings });
   };
@@ -398,7 +409,7 @@ const CreatePackagesPage: React.FC = () => {
       ));
     }
 
-    if (providerName === 'smileone' && smileoneProducts.mobilelegends) {
+    if (providerName === 'smileOne' && smileoneProducts.mobilelegends) {
       return smileoneProducts.mobilelegends.map((product) => (
         <Option key={product.id} value={product.spu}>
           {product.spu}
@@ -426,14 +437,22 @@ const CreatePackagesPage: React.FC = () => {
       formData.append('cashback', String(packageData.cashback));
       formData.append('status', packageData.status);
       formData.append('description', packageData.description);
-      formData.append('apiMappings', JSON.stringify(packageData.apiMappings));
+      
+      // Send apiMappings as individual fields in array format
+      packageData.apiMappings.forEach((mapping, index) => {
+        formData.append(`apiMappings[${index}][apiProvider]`, mapping.apiProvider);
+        formData.append(`apiMappings[${index}][productId]`, mapping.productId);
+        if (mapping.productTitle) {
+          formData.append(`apiMappings[${index}][productTitle]`, mapping.productTitle);
+        }
+      });
 
       if (
         packageData.logo &&
-        packageData.logo.file &&
-        packageData.logo.file.originFileObj
+        packageData.logo.length > 0 &&
+        packageData.logo[0].originFileObj
       ) {
-        formData.append('logo', packageData.logo.file.originFileObj);
+        formData.append('image', packageData.logo[0].originFileObj);
       } else {
         message.error('Please upload a package logo.');
         setSubmitting(false);
@@ -472,10 +491,10 @@ const CreatePackagesPage: React.FC = () => {
   };
 
   const normFile = (e: any) => {
-    if (Array.isArray(e)) return e;
-    return e && e.fileList.length > 0
-      ? { file: e.file, fileList: e.fileList }
-      : null;
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e?.fileList || [];
   };
 
   if (loadingApiProviders) {
@@ -601,14 +620,6 @@ const CreatePackagesPage: React.FC = () => {
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  {/* <Form.Item
-                    name="logo"
-                    label="Logo URL"
-                    rules={[{ required: true, message: 'Please enter logo URL' }, { type: 'url', message: 'Please enter a valid URL' }]}
-                  >
-                    <Input placeholder="https://example.com/logo.png" />
-                  </Form.Item> */}
-
                   <Form.Item
                     name="logo"
                     label="Logo"
@@ -619,7 +630,7 @@ const CreatePackagesPage: React.FC = () => {
                     ]}
                   >
                     <Upload.Dragger
-                      name="logo"
+                      name="image"
                       customRequest={dummyRequest}
                       listType="picture"
                       maxCount={1}
@@ -728,7 +739,7 @@ const CreatePackagesPage: React.FC = () => {
                             </Col>
                             <Col span={6}>
                               {providerName === 'moogold' ||
-                              providerName === 'smileone' ? (
+                              providerName === 'smileOne' ? (
                                 <Form.Item
                                   {...field}
                                   name={[field.name, 'productTitle']}
@@ -779,6 +790,7 @@ const CreatePackagesPage: React.FC = () => {
                                 </Form.Item>
                               )}
                             </Col>
+                            {/* Only show variations for moogold */}
                             {providerName === 'moogold' &&
                               selectedProductId && (
                                 <Col span={10}>
@@ -852,26 +864,27 @@ const CreatePackagesPage: React.FC = () => {
                                   </Form.Item>
                                 </Col>
                               )}
-                            {providerName === 'smileone' &&
+                            {/* For smileone, show product ID as read-only field */}
+                            {providerName === 'smileOne' &&
                               selectedProductId && (
-                                <Col span={10}>
+                                <Col span={4}>
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'productId']}
                                     label="Product ID"
-                                    rules={[
-                                      {
-                                        required: true,
-                                        message: 'Product ID is required',
-                                      },
-                                    ]}
                                   >
-                                    <Input placeholder="Product ID" readOnly />
+                                    <Input 
+                                      placeholder="Product ID" 
+                                      value={selectedProductId}
+                                      readOnly 
+                                      style={{ backgroundColor: '#f5f5f5' }}
+                                    />
                                   </Form.Item>
                                 </Col>
                               )}
+                            {/* For other providers, show manual product ID input */}
                             {providerName !== 'moogold' &&
-                              providerName !== 'smileone' && (
+                              providerName !== 'smileOne' && (
                                 <Col span={4}>
                                   <Form.Item
                                     {...field}
@@ -902,6 +915,7 @@ const CreatePackagesPage: React.FC = () => {
                               )}
                             </Col>
                           </Row>
+                          {/* Moogold Product Detail Display */}
                           {productDetail && (
                             <Row
                               style={{
@@ -951,7 +965,8 @@ const CreatePackagesPage: React.FC = () => {
                               </Col>
                             </Row>
                           )}
-                          {providerName === 'smileone' &&
+                          {/* Smileone Product Detail Display */}
+                          {providerName === 'smileOne' &&
                             selectedProductId &&
                             smileoneProducts.mobilelegends && (
                               <Row
@@ -995,7 +1010,12 @@ const CreatePackagesPage: React.FC = () => {
                                           smileoneProducts.mobilelegends.find(
                                             (p) => p.id === selectedProductId
                                           )?.cost_price
-                                        }
+                                        }{' '}
+                                        | Discount: {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.discount
+                                        }%
                                       </div>
                                     </div>
                                   </div>
