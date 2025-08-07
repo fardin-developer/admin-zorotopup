@@ -1005,7 +1005,7 @@ const CreatePackagesPage: React.FC = () => {
                                             (p) => p.id === selectedProductId
                                           )?.price
                                         }{' '}
-                                        | Cost: $
+                                        | Cost: ₹
                                         {
                                           smileoneProducts.mobilelegends.find(
                                             (p) => p.id === selectedProductId
