@@ -30,6 +30,23 @@ import type { UploadProps } from 'antd/es/upload/interface';
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
 
+// Smileone interfaces
+interface SmileoneProduct {
+  id: string;
+  spu: string;
+  price: string;
+  cost_price: string;
+  discount: number | string;
+}
+
+interface SmileoneProductResponse {
+  success: boolean;
+  message: string;
+  data: {
+    product: SmileoneProduct[];
+  };
+}
+
 interface Product {
   ID: string;
   post_title: string;
@@ -128,6 +145,9 @@ const EditPackagePage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<{ [key: string]: Product[] }>({});
+  const [smileoneProducts, setSmileoneProducts] = useState<{
+    [key: string]: SmileoneProduct[];
+  }>({});
   const [loadingProducts, setLoadingProducts] = useState<{
     [key: string]: boolean;
   }>({});
@@ -296,6 +316,38 @@ const EditPackagePage: React.FC = () => {
     }
   };
 
+  const fetchSmileoneProducts = async (
+    productType: string = 'mobilelegends'
+  ) => {
+    try {
+      setLoadingProducts((prev) => ({ ...prev, smileone: true }));
+      const response = await fetch(API_ENDPOINTS.SMILEONE_PRODUCTS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product: productType,
+        }),
+      });
+      const data: SmileoneProductResponse = await response.json();
+
+      if (data.success) {
+        setSmileoneProducts((prev) => ({
+          ...prev,
+          [productType]: data.data.product,
+        }));
+      } else {
+        message.error('Failed to fetch smileone products');
+      }
+    } catch (error) {
+      console.error('Error fetching smileone products:', error);
+      message.error('Error fetching smileone products');
+    } finally {
+      setLoadingProducts((prev) => ({ ...prev, smileone: false }));
+    }
+  };
+
   const handleApiProviderChange = (value: string, fieldName: number) => {
     const providerName = apiProviders.find((provider) => provider.id === value)
       ?.name;
@@ -316,6 +368,9 @@ const EditPackagePage: React.FC = () => {
     if (providerName === 'moogold' && !products.moogold) {
       fetchMoogoldProducts();
     }
+    if (providerName === 'smileOne' && !smileoneProducts.mobilelegends) {
+      fetchSmileoneProducts('mobilelegends');
+    }
   };
 
   const handleProductSelect = async (
@@ -324,20 +379,45 @@ const EditPackagePage: React.FC = () => {
     fieldName: number
   ) => {
     const productId = option.key;
+    const currentApiProvider = form.getFieldValue([
+      'apiMappings',
+      fieldName,
+      'apiProvider',
+    ]);
+    const providerName = apiProviders.find(
+      (provider) => provider.id === currentApiProvider
+    )?.name;
 
     // Auto-fill the product ID when a product is selected
     const currentValues = form.getFieldsValue();
     const apiMappings = [...currentValues.apiMappings];
-    apiMappings[fieldName] = {
-      ...apiMappings[fieldName],
-      productTitle: value,
-      selectedProductId: productId,
-      variationId: undefined, // Clear variation when product changes
-    };
+    
+    if (providerName === 'smileone') {
+      // For smileone, directly use the product ID without variations
+      apiMappings[fieldName] = {
+        ...apiMappings[fieldName],
+        productTitle: value,
+        selectedProductId: productId,
+        productId: productId, // Use the product ID directly
+        variationId: undefined, // Not needed for smileone
+      };
+    } else {
+      // For moogold and others
+      apiMappings[fieldName] = {
+        ...apiMappings[fieldName],
+        productTitle: value,
+        selectedProductId: productId,
+        productId: productId, // Set productId for smileone
+        variationId: undefined, // Clear variation when product changes
+      };
+    }
+    
     form.setFieldsValue({ apiMappings });
 
-    // Fetch product variations
-    await fetchProductDetail(productId);
+    // Fetch product variations only for moogold
+    if (providerName === 'moogold') {
+      await fetchProductDetail(productId);
+    }
   };
 
   const handleVariationSelect = (variationId: string, fieldName: number) => {
@@ -360,6 +440,14 @@ const EditPackagePage: React.FC = () => {
       return products.moogold.map((product) => (
         <Option key={product.ID} value={product.post_title}>
           {product.post_title}
+        </Option>
+      ));
+    }
+
+    if (providerName === 'smileOne' && smileoneProducts.mobilelegends) {
+      return smileoneProducts.mobilelegends.map((product) => (
+        <Option key={product.id} value={product.spu}>
+          {product.spu}
         </Option>
       ));
     }
@@ -389,6 +477,13 @@ const EditPackagePage: React.FC = () => {
       !products.moogold
     ) {
       fetchMoogoldProducts();
+    }
+    if (
+      !editingMappings[fieldName] &&
+      providerName === 'smileOne' &&
+      !smileoneProducts.mobilelegends
+    ) {
+      fetchSmileoneProducts('mobilelegends');
     }
   };
 
@@ -807,11 +902,12 @@ const EditPackagePage: React.FC = () => {
                             ) : (
                               <>
                                 <Col span={6}>
-                                  {providerName === 'moogold' ? (
+                                  {providerName === 'moogold' ||
+                                  providerName === 'smileOne' ? (
                                     <Form.Item
                                       {...field}
                                       name={[field.name, 'productTitle']}
-                                      label="Product Title"
+                                      label="Product"
                                       rules={[
                                         {
                                           required: true,
@@ -822,7 +918,9 @@ const EditPackagePage: React.FC = () => {
                                       <Select
                                         placeholder="Select Product"
                                         showSearch
-                                        loading={loadingProducts.moogold}
+                                        loading={
+                                          loadingProducts[providerName || '']
+                                        }
                                         filterOption={(input, option) => {
                                           if (!option?.children) return false;
                                           return String(option.children)
@@ -930,6 +1028,20 @@ const EditPackagePage: React.FC = () => {
                                         )}
                                       </Select>
                                     </Form.Item>
+                                  ) : providerName === 'smileOne' &&
+                                    selectedProductId ? (
+                                    <Form.Item
+                                      {...field}
+                                      name={[field.name, 'productId']}
+                                      label="Product ID"
+                                    >
+                                      <Input 
+                                        placeholder="Product ID" 
+                                        value={selectedProductId}
+                                        readOnly 
+                                        style={{ backgroundColor: '#f5f5f5' }}
+                                      />
+                                    </Form.Item>
                                   ) : (
                                     <Form.Item
                                       {...field}
@@ -1024,6 +1136,64 @@ const EditPackagePage: React.FC = () => {
                               </Col>
                             </Row>
                           )}
+                          {/* Smileone Product Detail Display */}
+                          {providerName === 'smileOne' &&
+                            selectedProductId &&
+                            smileoneProducts.mobilelegends &&
+                            isEditing && (
+                              <Row
+                                style={{
+                                  marginTop: 8,
+                                  padding: '8px 12px',
+                                  backgroundColor: '#f6f6f6',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <Col span={24}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 12,
+                                    }}
+                                  >
+                                    <div>
+                                      <div style={{ fontWeight: 500 }}>
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.spu
+                                        }
+                                      </div>
+                                      <div
+                                        style={{
+                                          color: '#666',
+                                          fontSize: '12px',
+                                        }}
+                                      >
+                                        Price: $
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.price
+                                        }{' '}
+                                        | Cost: ₹
+                                        {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.cost_price
+                                        }{' '}
+                                        | Discount: {
+                                          smileoneProducts.mobilelegends.find(
+                                            (p) => p.id === selectedProductId
+                                          )?.discount
+                                        }%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Col>
+                              </Row>
+                            )}
                         </div>
                       );
                     })}
