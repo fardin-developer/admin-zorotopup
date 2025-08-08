@@ -14,6 +14,7 @@ import {
   Spin,
   Upload,
   Image,
+  Tag,
 } from 'antd';
 import {
   MinusCircleOutlined,
@@ -141,6 +142,31 @@ const EditPackagePage: React.FC = () => {
     gameId: string;
     packageId: string;
   }>();
+
+  // Mobile-friendly styles
+  const mobileStyles = {
+    card: {
+      borderRadius: '8px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    formItem: {
+      marginBottom: '16px',
+    },
+    select: {
+      width: '100%',
+    },
+    button: {
+      width: '100%',
+      maxWidth: '200px',
+    },
+    mappingCard: {
+      border: '1px solid #d9d9d9',
+      borderRadius: '8px',
+      padding: '16px',
+      marginBottom: '16px',
+      backgroundColor: '#fafafa',
+    },
+  };
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -439,7 +465,22 @@ const EditPackagePage: React.FC = () => {
     if (providerName === 'moogold' && products.moogold) {
       return products.moogold.map((product) => (
         <Option key={product.ID} value={product.post_title}>
-          {product.post_title}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '4px',
+            minHeight: '40px',
+            justifyContent: 'center'
+          }}>
+            <div style={{ 
+              fontWeight: 500, 
+              fontSize: '14px',
+              lineHeight: '1.2',
+              wordBreak: 'break-word'
+            }}>
+              {product.post_title}
+            </div>
+          </div>
         </Option>
       ));
     }
@@ -447,7 +488,32 @@ const EditPackagePage: React.FC = () => {
     if (providerName === 'smileOne' && smileoneProducts.mobilelegends) {
       return smileoneProducts.mobilelegends.map((product) => (
         <Option key={product.id} value={product.spu}>
-          {product.spu}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '4px',
+            minHeight: '40px',
+            justifyContent: 'center'
+          }}>
+            <div style={{ 
+              fontWeight: 500, 
+              fontSize: '14px',
+              lineHeight: '1.2',
+              wordBreak: 'break-word'
+            }}>
+              {product.spu}
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              gap: '8px', 
+              fontSize: '12px',
+              color: '#666'
+            }}>
+              <Tag color="blue">${product.price}</Tag>
+              <Tag color="green">₹{product.cost_price}</Tag>
+              <Tag color="orange">{product.discount}% off</Tag>
+            </div>
+          </div>
         </Option>
       ));
     }
@@ -618,6 +684,11 @@ const EditPackagePage: React.FC = () => {
           icon={<ArrowLeftOutlined />}
           onClick={handleBackToPackages}
           size="large"
+          style={{ 
+            width: '100%', 
+            maxWidth: '200px',
+            marginBottom: '16px'
+          }}
         >
           Back to Packages
         </Button>
@@ -652,6 +723,11 @@ const EditPackagePage: React.FC = () => {
                       .toLowerCase()
                       .includes(input.toLowerCase());
                   }}
+                  style={{ width: '100%' }}
+                  dropdownStyle={{ 
+                    maxHeight: '300px',
+                    overflow: 'auto'
+                  }}
                 >
                   {games.map((game) => (
                     <Option key={game._id} value={game._id}>
@@ -660,28 +736,52 @@ const EditPackagePage: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
+                          minHeight: '40px',
+                          padding: '4px 0'
                         }}
                       >
                         <img
                           src={game.image}
                           alt={game.name}
-                          style={{ width: 24, height: 24, borderRadius: 4 }}
+                          style={{ 
+                            width: 32, 
+                            height: 32, 
+                            borderRadius: 6,
+                            objectFit: 'cover'
+                          }}
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display =
                               'none';
                           }}
                         />
-                        <span>{game.name}</span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>
-                          ({game.publisher})
-                        </span>
+                        <div style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          flex: 1,
+                          minWidth: 0
+                        }}>
+                          <span style={{ 
+                            fontWeight: 500,
+                            fontSize: '14px',
+                            lineHeight: '1.2'
+                          }}>
+                            {game.name}
+                          </span>
+                          <span style={{ 
+                            color: '#666', 
+                            fontSize: '12px',
+                            lineHeight: '1.2'
+                          }}>
+                            {game.publisher}
+                          </span>
+                        </div>
                       </div>
                     </Option>
                   ))}
                 </Select>
               </Form.Item>
-              <Row gutter={16}>
-                <Col span={8}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="amount"
                     label="Amount"
@@ -690,7 +790,7 @@ const EditPackagePage: React.FC = () => {
                     <Input type="number" placeholder="Enter amount" min={0} />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="commission"
                     label="Commission"
@@ -705,7 +805,7 @@ const EditPackagePage: React.FC = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="cashback"
                     label="Cashback"
@@ -717,8 +817,8 @@ const EditPackagePage: React.FC = () => {
                   </Form.Item>
                 </Col>
               </Row>
-              <Row gutter={16}>
-                <Col span={12}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="logo"
                     label="Logo"
@@ -747,7 +847,7 @@ const EditPackagePage: React.FC = () => {
                     </Upload.Dragger>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="status"
                     label="Status"
@@ -755,7 +855,7 @@ const EditPackagePage: React.FC = () => {
                       { required: true, message: 'Please select status' },
                     ]}
                   >
-                    <Select>
+                    <Select style={{ width: '100%' }}>
                       <Option value="active">Active</Option>
                       <Option value="inactive">Inactive</Option>
                     </Select>
@@ -833,15 +933,10 @@ const EditPackagePage: React.FC = () => {
                       return (
                         <div
                           key={String(field.name)}
-                          style={{
-                            marginBottom: 16,
-                            padding: 16,
-                            border: '1px solid #d9d9d9',
-                            borderRadius: 6,
-                          }}
+                          style={mobileStyles.mappingCard}
                         >
-                          <Row gutter={16}>
-                            <Col span={6}>
+                          <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={12} md={6}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, 'apiProvider']}
@@ -859,6 +954,7 @@ const EditPackagePage: React.FC = () => {
                                   onChange={(value) =>
                                     handleApiProviderChange(value, field.name)
                                   }
+                                  style={{ width: '100%' }}
                                 >
                                   {apiProviders.map((provider) => (
                                     <Option
@@ -873,19 +969,20 @@ const EditPackagePage: React.FC = () => {
                             </Col>
 
                             {!isEditing ? (
-                              <Col span={12}>
+                              <Col xs={24} sm={12}>
                                 <Form.Item label="Product ID">
                                   <div
                                     style={{
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: 8,
+                                      flexWrap: 'wrap'
                                     }}
                                   >
                                     <Input
                                       value={currentProductId}
                                       readOnly
-                                      style={{ flex: 1 }}
+                                      style={{ flex: 1, minWidth: '200px' }}
                                     />
                                     <Button
                                       icon={<EditOutlined />}
@@ -901,7 +998,7 @@ const EditPackagePage: React.FC = () => {
                               </Col>
                             ) : (
                               <>
-                                <Col span={6}>
+                                <Col xs={24} sm={12} md={6}>
                                   {providerName === 'moogold' ||
                                   providerName === 'smileOne' ? (
                                     <Form.Item
@@ -934,6 +1031,11 @@ const EditPackagePage: React.FC = () => {
                                             field.name
                                           )
                                         }
+                                        style={{ width: '100%' }}
+                                        dropdownStyle={{ 
+                                          maxHeight: '300px',
+                                          overflow: 'auto'
+                                        }}
                                       >
                                         {getProductOptions(currentApiProvider)}
                                       </Select>
@@ -954,7 +1056,7 @@ const EditPackagePage: React.FC = () => {
                                     </Form.Item>
                                   )}
                                 </Col>
-                                <Col span={6}>
+                                <Col xs={24} sm={12} md={6}>
                                   {providerName === 'moogold' &&
                                   selectedProductId ? (
                                     <Form.Item
@@ -980,19 +1082,32 @@ const EditPackagePage: React.FC = () => {
                                           )
                                         }
                                         optionLabelProp="label"
+                                        style={{ width: '100%' }}
+                                        dropdownStyle={{ 
+                                          maxHeight: '300px',
+                                          overflow: 'auto'
+                                        }}
                                       >
                                         {productDetail?.Variation?.map(
                                           (variation) => (
                                             <Option
                                               key={variation.variation_id}
                                               value={variation.variation_id.toString()}
-                                              label={`${variation.variation_name} - ID: ${variation.variation_id}`}
+                                              label={`${variation.variation_name} - $${variation.variation_price}`}
                                             >
-                                              <div style={{ padding: '8px 0' }}>
+                                              <div style={{ 
+                                                padding: '12px 0',
+                                                minHeight: '50px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '6px'
+                                              }}>
                                                 <div
                                                   style={{
                                                     fontWeight: 500,
-                                                    marginBottom: 4,
+                                                    fontSize: '14px',
+                                                    lineHeight: '1.3',
+                                                    wordBreak: 'break-word'
                                                   }}
                                                 >
                                                   {variation.variation_name}
@@ -1000,27 +1115,18 @@ const EditPackagePage: React.FC = () => {
                                                 <div
                                                   style={{
                                                     display: 'flex',
-                                                    justifyContent:
-                                                      'space-between',
+                                                    justifyContent: 'space-between',
                                                     alignItems: 'center',
+                                                    flexWrap: 'wrap',
+                                                    gap: '8px'
                                                   }}
                                                 >
-                                                  <span
-                                                    style={{
-                                                      color: '#666',
-                                                      fontSize: '12px',
-                                                    }}
-                                                  >
+                                                  <Tag color="default" style={{ fontSize: '11px' }}>
                                                     ID: {variation.variation_id}
-                                                  </span>
-                                                  <span
-                                                    style={{
-                                                      color: '#52c41a',
-                                                      fontWeight: 'bold',
-                                                    }}
-                                                  >
+                                                  </Tag>
+                                                  <Tag color="success" style={{ fontSize: '11px', fontWeight: 'bold' }}>
                                                     ${variation.variation_price}
-                                                  </span>
+                                                  </Tag>
                                                 </div>
                                               </div>
                                             </Option>
@@ -1061,15 +1167,16 @@ const EditPackagePage: React.FC = () => {
                               </>
                             )}
 
-                            <Col span={isEditing ? 2 : 4}>
+                            <Col xs={24} sm={12} md={isEditing ? 2 : 4}>
                               <Form.Item label=" ">
                                 {isEditing ? (
-                                  <Space>
+                                  <Space direction="vertical" style={{ width: '100%' }}>
                                     <Button
                                       size="small"
                                       onClick={() =>
                                         cancelEditMapping(field.name)
                                       }
+                                      style={{ width: '100%' }}
                                     >
                                       Cancel
                                     </Button>
@@ -1081,7 +1188,7 @@ const EditPackagePage: React.FC = () => {
                                     danger
                                     icon={<MinusCircleOutlined />}
                                     onClick={() => remove(field.name)}
-                                    style={{ marginTop: 4 }}
+                                    style={{ marginTop: 4, width: '100%' }}
                                   />
                                 )}
                               </Form.Item>
@@ -1211,16 +1318,21 @@ const EditPackagePage: React.FC = () => {
                 )}
               </Form.List>
               <Form.Item>
-                <Space>
+                <Space direction="vertical" style={{ width: '100%' }}>
                   <Button
                     type="primary"
                     htmlType="submit"
                     size="large"
                     loading={submitting}
+                    style={{ width: '100%', maxWidth: '300px' }}
                   >
                     Update Package
                   </Button>
-                  <Button size="large" onClick={handleBackToPackages}>
+                  <Button 
+                    size="large" 
+                    onClick={handleBackToPackages}
+                    style={{ width: '100%', maxWidth: '300px' }}
+                  >
                     Cancel
                   </Button>
                 </Space>
