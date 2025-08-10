@@ -25,17 +25,17 @@ import {
   SearchOutlined,
   FilterOutlined,
   ReloadOutlined,
-  ShoppingCartOutlined,
+  CreditCardOutlined,
   UserOutlined,
   DollarOutlined,
   CheckCircleOutlined,
   EyeOutlined,
-  EditOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined as CheckCircleIcon,
   CloseCircleOutlined,
   ExclamationCircleOutlined,
-  SyncOutlined
+  BankOutlined,
+  SwapOutlined
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { authenticatedFetch, API_ENDPOINTS } from '../utils/auth';
@@ -47,24 +47,19 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 // Type definitions
-interface OrderItem {
-  itemName: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
+interface Transaction {
   _id: string;
+  txnId: string;
   orderId: string;
-  orderType: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  paymentMethod: string;
-  items: OrderItem[];
-  description: string;
+  status: 'success' | 'pending' | 'failed' | 'cancelled';
+  gatewayType: string;
+  customerName: string;
+  customerEmail: string;
+  customerNumber: string;
+  paymentNote: string;
   createdAt: string;
-  apiResults?: any;
   userId: {
     _id: string;
     name: string;
@@ -76,7 +71,7 @@ interface Order {
 interface Pagination {
   currentPage: number;
   totalPages: number;
-  totalOrders: number;
+  totalTransactions: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
   limit: number;
@@ -84,10 +79,10 @@ interface Pagination {
 
 interface Filters {
   search: string;
+  txnId: string;
   orderId: string;
-  orderType: string;
   status: string;
-  paymentMethod: string;
+  gatewayType: string;
   date: string;
   minAmount: string;
   maxAmount: string;
@@ -95,47 +90,46 @@ interface Filters {
 
 interface Stats {
   totalAmount: number;
-  totalOrders: number;
-  pendingOrders: number;
-  processingOrders: number;
-  completedOrders: number;
-  failedOrders: number;
-  cancelledOrders: number;
+  successTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  cancelledTransactions: number;
+  onegatewayTransactions: number;
+  ekqrTransactions: number;
 }
 
-interface OrdersResponse {
+interface TransactionsResponse {
   success: boolean;
   message: string;
   data: {
-    orders: Order[];
+    transactions: Transaction[];
     pagination: Pagination;
     filters: Filters;
     stats: Stats;
   };
 }
 
-const OrdersPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+const TransactionsPage: React.FC = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [filters, setFilters] = useState<Filters>({
     search: '',
+    txnId: '',
     orderId: '',
-    orderType: '',
     status: '',
-    paymentMethod: '',
+    gatewayType: '',
     date: '',
     minAmount: '',
     maxAmount: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orderDetailModalVisible, setOrderDetailModalVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [transactionDetailModalVisible, setTransactionDetailModalVisible] = useState(false);
   const [filtersDrawerVisible, setFiltersDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [syncingOrderId, setSyncingOrderId] = useState<string | null>(null);
 
   // Check if mobile
   useEffect(() => {
@@ -149,8 +143,8 @@ const OrdersPage: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fetch orders with filters and pagination
-  const fetchOrders = async (page: number = 1, limit: number = 10) => {
+  // Fetch transactions with filters and pagination
+  const fetchTransactions = async (page: number = 1, limit: number = 10) => {
     try {
       setLoading(true);
       
@@ -160,50 +154,49 @@ const OrdersPage: React.FC = () => {
       params.append('limit', limit.toString());
       
       if (filters.search) params.append('search', filters.search);
+      if (filters.txnId) params.append('txnId', filters.txnId);
       if (filters.orderId) params.append('orderId', filters.orderId);
-      if (filters.orderType) params.append('orderType', filters.orderType);
       if (filters.status) params.append('status', filters.status);
-      if (filters.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
+      if (filters.gatewayType) params.append('gatewayType', filters.gatewayType);
       if (filters.date) params.append('date', filters.date);
       if (filters.minAmount) params.append('minAmount', filters.minAmount);
       if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
 
-      const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_ORDERS(params.toString()));
-      const data: OrdersResponse = await response.json();
+      const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_TRANSACTIONS(params.toString()));
+      const data: TransactionsResponse = await response.json();
       console.log(data);
-      
 
       if (data.success) {
-        setOrders(data.data.orders);
+        setTransactions(data.data.transactions);
         setPagination(data.data.pagination);
         setStats(data.data.stats);
       } else {
-        message.error(data.message || 'Failed to fetch orders');
+        message.error(data.message || 'Failed to fetch transactions');
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      message.error('Error fetching orders');
+      console.error('Error fetching transactions:', error);
+      message.error('Error fetching transactions');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders(currentPage, pageSize);
+    fetchTransactions(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
   // Handle search
   const handleSearch = (value: string) => {
     setFilters(prev => ({ ...prev, search: value }));
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
+    fetchTransactions(1, pageSize);
   };
 
   // Handle filter changes
   const handleFilterChange = (key: keyof Filters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
+    fetchTransactions(1, pageSize);
   };
 
   // Handle date filter
@@ -216,71 +209,43 @@ const OrdersPage: React.FC = () => {
       setFilters(prev => ({ ...prev, date: '' }));
     }
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
+    fetchTransactions(1, pageSize);
   };
 
   // Clear all filters
   const clearFilters = () => {
     setFilters({
       search: '',
+      txnId: '',
       orderId: '',
-      orderType: '',
       status: '',
-      paymentMethod: '',
+      gatewayType: '',
       date: '',
       minAmount: '',
       maxAmount: ''
     });
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
+    fetchTransactions(1, pageSize);
   };
 
   // Refresh data
   const refreshData = () => {
-    fetchOrders(currentPage, pageSize);
+    fetchTransactions(currentPage, pageSize);
   };
 
-  // Show order details
-  const showOrderDetails = (order: Order) => {
-    setSelectedOrder(order);
-    setOrderDetailModalVisible(true);
-  };
-
-  // Sync order status
-  const syncOrderStatus = async (order: Order) => {
-    try {
-      setSyncingOrderId(order._id);
-      
-      const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_ORDER_STATUS_SYNC(order.orderId, order.userId._id), {
-        method: 'GET'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        message.success('Order status synced successfully');
-        // Refresh the orders list to get updated status
-        fetchOrders(currentPage, pageSize);
-      } else {
-        message.error(result.message || 'Failed to sync order status');
-      }
-    } catch (error) {
-      console.error('Error syncing order status:', error);
-      message.error('Error syncing order status');
-    } finally {
-      setSyncingOrderId(null);
-    }
+  // Show transaction details
+  const showTransactionDetails = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setTransactionDetailModalVisible(true);
   };
 
   // Get status color and icon
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'completed':
-        return { color: 'success', icon: <CheckCircleIcon />, text: 'Completed' };
-      case 'processing':
-        return { color: 'processing', icon: <ClockCircleOutlined />, text: 'Processing' };
+      case 'success':
+        return { color: 'success', icon: <CheckCircleIcon />, text: 'Success' };
       case 'pending':
-        return { color: 'warning', icon: <ClockCircleOutlined />, text: 'Pending' };
+        return { color: 'processing', icon: <ClockCircleOutlined />, text: 'Pending' };
       case 'failed':
         return { color: 'error', icon: <CloseCircleOutlined />, text: 'Failed' };
       case 'cancelled':
@@ -290,9 +255,21 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  // Mobile card view for orders
-  const MobileOrderCard: React.FC<{ order: Order }> = ({ order }) => {
-    const statusConfig = getStatusConfig(order.status);
+  // Get gateway icon
+  const getGatewayIcon = (gatewayType: string) => {
+    switch (gatewayType.toLowerCase()) {
+      case 'onegateway':
+        return <BankOutlined />;
+      case 'ekqr':
+        return <SwapOutlined />;
+      default:
+        return <CreditCardOutlined />;
+    }
+  };
+
+  // Mobile card view for transactions
+  const MobileTransactionCard: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
+    const statusConfig = getStatusConfig(transaction.status);
     
     return (
       <Card 
@@ -303,47 +280,32 @@ const OrdersPage: React.FC = () => {
             type="text"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => showOrderDetails(order)}
+            onClick={() => showTransactionDetails(transaction)}
           >
-            View
-          </Button>,
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-          >
-            Edit
-          </Button>,
-          <Button
-            type="text"
-            size="small"
-            icon={<SyncOutlined />}
-            loading={syncingOrderId === order._id}
-            onClick={() => syncOrderStatus(order)}
-          >
-            Sync Status
-          </Button>,
+            View Details
+          </Button>
         ]}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <Avatar icon={<ShoppingCartOutlined />} />
+          <Avatar icon={getGatewayIcon(transaction.gatewayType)} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>{order.orderId}</div>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>{transaction.txnId}</div>
             <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
-              {order.orderType}
+              Order: {transaction.orderId}
             </div>
             <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
               <UserOutlined style={{ marginRight: 4 }} />
-              {order.userId.name}
+              {transaction.customerName || transaction.userId?.name}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
               <Badge
                 status={statusConfig.color as any}
                 text={statusConfig.text}
               />
+              <Tag color="blue">{transaction.gatewayType}</Tag>
               <div style={{ color: '#52c41a', fontWeight: 'bold', fontSize: '12px' }}>
                 <DollarOutlined style={{ marginRight: 4 }} />
-                {order.currency} {order.amount.toLocaleString()}
+                {transaction.currency} {transaction.amount.toLocaleString()}
               </div>
             </div>
           </div>
@@ -353,32 +315,34 @@ const OrdersPage: React.FC = () => {
   };
 
   // Desktop table columns
-  const columns: ColumnsType<Order> = [
+  const columns: ColumnsType<Transaction> = [
     {
       title: 'Customer',
       key: 'customer',
-      render: (_, record: Order) => (
+      render: (_, record: Transaction) => (
         <Space>
           <UserOutlined />
           <div>
-            <div style={{ fontWeight: 500 }}>{record.userId.name}</div>
+            <div style={{ fontWeight: 500 }}>
+              {record.customerName || record.userId?.name}
+            </div>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.userId.email}
+              {record.customerEmail || record.userId?.email}
             </Text>
           </div>
         </Space>
       ),
     },
     {
-      title: 'Order',
-      key: 'order',
-      render: (_, record: Order) => (
+      title: 'Transaction',
+      key: 'transaction',
+      render: (_, record: Transaction) => (
         <Space>
-          <Avatar icon={<ShoppingCartOutlined />} />
+          <Avatar icon={getGatewayIcon(record.gatewayType)} />
           <div>
-            <div style={{ fontWeight: 500 }}>{record.orderId}</div>
+            <div style={{ fontWeight: 500 }}>{record.txnId}</div>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.orderType}
+              Order: {record.orderId}
             </Text>
           </div>
         </Space>
@@ -388,7 +352,7 @@ const OrdersPage: React.FC = () => {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount: number, record: Order) => (
+      render: (amount: number, record: Transaction) => (
         <Space>
           <DollarOutlined />
           <Text strong style={{ color: '#52c41a' }}>
@@ -412,11 +376,13 @@ const OrdersPage: React.FC = () => {
       },
     },
     {
-      title: 'Payment Method',
-      dataIndex: 'paymentMethod',
-      key: 'paymentMethod',
-      render: (method: string) => (
-        <Tag color="blue">{method}</Tag>
+      title: 'Gateway',
+      dataIndex: 'gatewayType',
+      key: 'gatewayType',
+      render: (gateway: string) => (
+        <Tag color="blue" icon={getGatewayIcon(gateway)}>
+          {gateway}
+        </Tag>
       ),
     },
     {
@@ -428,27 +394,13 @@ const OrdersPage: React.FC = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record: Order) => (
+      render: (_, record: Transaction) => (
         <Space>
           <Tooltip title="View Details">
             <Button
               type="text"
               icon={<EyeOutlined />}
-              onClick={() => showOrderDetails(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Edit Order">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-            />
-          </Tooltip>
-          <Tooltip title="Sync Order Status">
-            <Button
-              type="text"
-              icon={<SyncOutlined />}
-              loading={syncingOrderId === record._id}
-              onClick={() => syncOrderStatus(record)}
+              onClick={() => showTransactionDetails(record)}
             />
           </Tooltip>
         </Space>
@@ -462,7 +414,7 @@ const OrdersPage: React.FC = () => {
       <Row gutter={[8, 8]}>
         <Col xs={24} sm={24} md={24}>
           <Input
-            placeholder="Search orders..."
+            placeholder="Search transactions..."
             prefix={<SearchOutlined />}
             value={filters.search}
             onChange={(e) => handleSearch(e.target.value)}
@@ -472,47 +424,44 @@ const OrdersPage: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} md={12}>
           <Select
-            placeholder="Order Status"
+            placeholder="Transaction Status"
             value={filters.status}
             onChange={(value) => handleFilterChange('status', value)}
             allowClear
             style={{ width: '100%', marginBottom: 8 }}
           >
+            <Option value="success">Success</Option>
             <Option value="pending">Pending</Option>
-            <Option value="processing">Processing</Option>
-            <Option value="completed">Completed</Option>
             <Option value="failed">Failed</Option>
             <Option value="cancelled">Cancelled</Option>
           </Select>
         </Col>
         <Col xs={24} sm={12} md={12}>
           <Select
-            placeholder="Payment Method"
-            value={filters.paymentMethod}
-            onChange={(value) => handleFilterChange('paymentMethod', value)}
+            placeholder="Gateway Type"
+            value={filters.gatewayType}
+            onChange={(value) => handleFilterChange('gatewayType', value)}
             allowClear
             style={{ width: '100%', marginBottom: 8 }}
           >
-            <Option value="card">Card</Option>
-            <Option value="upi">UPI</Option>
-            <Option value="netbanking">Net Banking</Option>
-            <Option value="wallet">Wallet</Option>
+            <Option value="onegateway">OneGateway</Option>
+            <Option value="ekqr">EKQR</Option>
           </Select>
         </Col>
         <Col xs={24} sm={12} md={12}>
           <Input
-            placeholder="Order ID"
-            value={filters.orderId}
-            onChange={(e) => handleFilterChange('orderId', e.target.value)}
+            placeholder="Transaction ID"
+            value={filters.txnId}
+            onChange={(e) => handleFilterChange('txnId', e.target.value)}
             allowClear
             style={{ marginBottom: 8 }}
           />
         </Col>
         <Col xs={24} sm={12} md={12}>
           <Input
-            placeholder="Order Type"
-            value={filters.orderType}
-            onChange={(e) => handleFilterChange('orderType', e.target.value)}
+            placeholder="Order ID"
+            value={filters.orderId}
+            onChange={(e) => handleFilterChange('orderId', e.target.value)}
             allowClear
             style={{ marginBottom: 8 }}
           />
@@ -572,15 +521,15 @@ const OrdersPage: React.FC = () => {
   return (
     <>
       <PageHeader
-        title="Order Management"
+        title="Transaction Management"
         breadcrumbs={[
           {
             title: 'Dashboard',
             path: '/dashboard',
           },
           {
-            title: 'Orders',
-            path: '/orders',
+            title: 'Transactions',
+            path: '/transactions',
           },
         ]}
       />
@@ -591,9 +540,9 @@ const OrdersPage: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card size="small">
               <Statistic
-                title="Total Orders"
-                value={stats.totalOrders}
-                prefix={<ShoppingCartOutlined />}
+                title="Total Amount"
+                value={stats.totalAmount}
+                prefix="₹"
                 valueStyle={{ color: '#1890ff' }}
               />
             </Card>
@@ -601,19 +550,18 @@ const OrdersPage: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card size="small">
               <Statistic
-                title="Total Amount"
-                value={stats.totalAmount}
-                prefix={<DollarOutlined />}
+                title="Success Transactions"
+                value={stats.successTransactions}
+                prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: '#52c41a' }}
-                suffix="₹"
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card size="small">
               <Statistic
-                title="Pending Orders"
-                value={stats.pendingOrders}
+                title="Pending Transactions"
+                value={stats.pendingTransactions}
                 prefix={<ClockCircleOutlined />}
                 valueStyle={{ color: '#faad14' }}
               />
@@ -622,10 +570,10 @@ const OrdersPage: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <Card size="small">
               <Statistic
-                title="Completed Orders"
-                value={stats.completedOrders}
-                prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#52c41a' }}
+                title="Failed Transactions"
+                value={stats.failedTransactions}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{ color: '#ff4d4f' }}
               />
             </Card>
           </Col>
@@ -638,7 +586,7 @@ const OrdersPage: React.FC = () => {
           <Row gutter={[8, 8]} align="middle">
             <Col span={12}>
               <Input
-                placeholder="Search orders..."
+                placeholder="Search transactions..."
                 prefix={<SearchOutlined />}
                 value={filters.search}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -668,7 +616,7 @@ const OrdersPage: React.FC = () => {
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} sm={12} md={6}>
               <Input
-                placeholder="Search orders..."
+                placeholder="Search transactions..."
                 prefix={<SearchOutlined />}
                 value={filters.search}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -683,25 +631,22 @@ const OrdersPage: React.FC = () => {
                 allowClear
                 style={{ width: '100%' }}
               >
+                <Option value="success">Success</Option>
                 <Option value="pending">Pending</Option>
-                <Option value="processing">Processing</Option>
-                <Option value="completed">Completed</Option>
                 <Option value="failed">Failed</Option>
                 <Option value="cancelled">Cancelled</Option>
               </Select>
             </Col>
             <Col xs={24} sm={12} md={3}>
               <Select
-                placeholder="Payment"
-                value={filters.paymentMethod}
-                onChange={(value) => handleFilterChange('paymentMethod', value)}
+                placeholder="Gateway"
+                value={filters.gatewayType}
+                onChange={(value) => handleFilterChange('gatewayType', value)}
                 allowClear
                 style={{ width: '100%' }}
               >
-                <Option value="card">Card</Option>
-                <Option value="upi">UPI</Option>
-                <Option value="netbanking">Net Banking</Option>
-                <Option value="wallet">Wallet</Option>
+                <Option value="onegateway">OneGateway</Option>
+                <Option value="ekqr">EKQR</Option>
               </Select>
             </Col>
             <Col xs={24} sm={12} md={4}>
@@ -729,7 +674,7 @@ const OrdersPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Orders Display */}
+      {/* Transactions Display */}
       <Card size="small">
         {isMobile ? (
           // Mobile Card View
@@ -737,8 +682,8 @@ const OrdersPage: React.FC = () => {
             {loading ? (
               <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>
             ) : (
-              orders.map(order => (
-                <MobileOrderCard key={order._id} order={order} />
+              transactions.map(transaction => (
+                <MobileTransactionCard key={transaction._id} transaction={transaction} />
               ))
             )}
             {pagination && (
@@ -746,7 +691,7 @@ const OrdersPage: React.FC = () => {
                 <Space direction="vertical" size="small">
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     Page {pagination.currentPage} of {pagination.totalPages} 
-                    ({pagination.totalOrders} total orders)
+                    ({pagination.totalTransactions} total transactions)
                   </Text>
                   <Space>
                     <Button
@@ -772,17 +717,17 @@ const OrdersPage: React.FC = () => {
           // Desktop Table View
           <Table
             columns={columns}
-            dataSource={orders}
+            dataSource={transactions}
             rowKey="_id"
             loading={loading}
             pagination={{
               current: pagination?.currentPage || 1,
-              total: pagination?.totalOrders || 0,
+              total: pagination?.totalTransactions || 0,
               pageSize: pagination?.limit || 10,
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
-                `${range[0]}-${range[1]} of ${total} orders`,
+                `${range[0]}-${range[1]} of ${total} transactions`,
               onChange: (page, size) => {
                 setCurrentPage(page);
                 setPageSize(size);
@@ -804,91 +749,87 @@ const OrdersPage: React.FC = () => {
         <FilterControls />
       </Drawer>
 
-      {/* Order Detail Modal */}
+      {/* Transaction Detail Modal */}
       <Modal
-        title="Order Details"
-        open={orderDetailModalVisible}
-        onCancel={() => setOrderDetailModalVisible(false)}
+        title="Transaction Details"
+        open={transactionDetailModalVisible}
+        onCancel={() => setTransactionDetailModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setOrderDetailModalVisible(false)}>
+          <Button key="close" onClick={() => setTransactionDetailModalVisible(false)}>
             Close
           </Button>,
         ]}
         width={isMobile ? '95%' : 600}
         style={isMobile ? { top: 20 } : {}}
       >
-        {selectedOrder && (
+        {selectedTransaction && (
           <div>
             <Row gutter={[16, 16]}>
               <Col span={24}>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                  <Avatar size={64} icon={<ShoppingCartOutlined />} />
+                  <Avatar size={64} icon={getGatewayIcon(selectedTransaction.gatewayType)} />
                   <Title level={isMobile ? 4 : 3} style={{ marginTop: 16 }}>
-                    {selectedOrder.orderId}
+                    {selectedTransaction.txnId}
                   </Title>
                 </div>
               </Col>
               <Col xs={24} sm={12}>
-                <Text strong>Order Type:</Text>
+                <Text strong>Transaction ID:</Text>
                 <br />
-                <Text>{selectedOrder.orderType}</Text>
+                <Text copyable>{selectedTransaction.txnId}</Text>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Text strong>Order ID:</Text>
+                <br />
+                <Text copyable>{selectedTransaction.orderId}</Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Amount:</Text>
                 <br />
                 <Text style={{ color: '#52c41a', fontWeight: 'bold' }}>
-                  {selectedOrder.currency} {selectedOrder.amount.toLocaleString()}
+                  {selectedTransaction.currency} {selectedTransaction.amount.toLocaleString()}
                 </Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Status:</Text>
                 <br />
                 <Badge
-                  status={getStatusConfig(selectedOrder.status).color as any}
-                  text={getStatusConfig(selectedOrder.status).text}
+                  status={getStatusConfig(selectedTransaction.status).color as any}
+                  text={getStatusConfig(selectedTransaction.status).text}
                 />
               </Col>
               <Col xs={24} sm={12}>
-                <Text strong>Payment Method:</Text>
+                <Text strong>Gateway Type:</Text>
                 <br />
-                <Tag color="blue">{selectedOrder.paymentMethod}</Tag>
+                <Tag color="blue" icon={getGatewayIcon(selectedTransaction.gatewayType)}>
+                  {selectedTransaction.gatewayType}
+                </Tag>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Customer Name:</Text>
                 <br />
-                <Text>{selectedOrder.userId.name}</Text>
+                <Text>{selectedTransaction.customerName || selectedTransaction.userId?.name}</Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Customer Email:</Text>
                 <br />
-                <Text copyable>{selectedOrder.userId.email}</Text>
+                <Text copyable>{selectedTransaction.customerEmail || selectedTransaction.userId?.email}</Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Customer Phone:</Text>
                 <br />
-                <Text copyable>{selectedOrder.userId.phone}</Text>
+                <Text copyable>{selectedTransaction.customerNumber || selectedTransaction.userId?.phone}</Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text strong>Created:</Text>
                 <br />
-                <Text>{dayjs(selectedOrder.createdAt).format('MMM DD, YYYY HH:mm')}</Text>
+                <Text>{dayjs(selectedTransaction.createdAt).format('MMM DD, YYYY HH:mm')}</Text>
               </Col>
-              {selectedOrder.description && (
+              {selectedTransaction.paymentNote && (
                 <Col span={24}>
-                  <Text strong>Description:</Text>
+                  <Text strong>Payment Note:</Text>
                   <br />
-                  <Text>{selectedOrder.description}</Text>
-                </Col>
-              )}
-              {selectedOrder.items && selectedOrder.items.length > 0 && (
-                <Col span={24}>
-                  <Text strong>Items:</Text>
-                  <br />
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} style={{ marginBottom: 8 }}>
-                      <Text>{item.itemName} - Qty: {item.quantity} - Price: {item.price}</Text>
-                    </div>
-                  ))}
+                  <Text>{selectedTransaction.paymentNote}</Text>
                 </Col>
               )}
             </Row>
@@ -899,4 +840,4 @@ const OrdersPage: React.FC = () => {
   );
 };
 
-export default OrdersPage;
+export default TransactionsPage;

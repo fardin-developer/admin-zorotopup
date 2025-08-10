@@ -110,6 +110,20 @@ export const API_ENDPOINTS = {
     `${API_BASE_URL}/admin/users${params ? `?${params}` : ''}`,
   ADMIN_ORDERS: (params?: string) =>
     `${API_BASE_URL}/admin/order${params ? `?${params}` : ''}`,
+  ADMIN_ORDER_STATUS_SYNC: (orderId: string, userId?: string) => 
+    `${API_BASE_URL}/order/order-status?orderId=${orderId}${userId ? `&userId=${userId}` : ''}`,
+  ADMIN_TRANSACTIONS: (params?: string) =>
+    `${API_BASE_URL}/admin/transaction${params ? `?${params}` : ''}`,
+  ADMIN_CREDIT_WALLET: `${API_BASE_URL}/admin/credit-wallet`,
+  ADMIN_NEWS: (params?: string) =>
+    `${API_BASE_URL}/admin/news${params ? `?${params}` : ''}`,
+  ADMIN_NEWS_CREATE: `${API_BASE_URL}/admin/news`,
+  ADMIN_NEWS_BY_ID: (id: string) => `${API_BASE_URL}/admin/news/${id}`,
+  ADMIN_NEWS_UPDATE: (id: string) => `${API_BASE_URL}/admin/news/${id}`,
+  ADMIN_NEWS_DELETE: (id: string) => `${API_BASE_URL}/admin/news/${id}`,
+  ADMIN_NEWS_TOGGLE_PIN: (id: string) => `${API_BASE_URL}/admin/news/${id}/pin`,
+  PUBLIC_NEWS: (params?: string) =>
+    `${API_BASE_URL}/admin/public/news${params ? `?${params}` : ''}`,
   ADMIN_GLOBAL_SEARCH: (params?: string) =>
     `${API_BASE_URL}/admin/search${params ? `?${params}` : ''}`,
 

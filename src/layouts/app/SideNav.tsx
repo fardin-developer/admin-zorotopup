@@ -7,6 +7,9 @@ import {
   UserOutlined,
   PlayCircleOutlined,
   ShoppingCartOutlined,
+  CreditCardOutlined,
+  WalletOutlined,
+  ReadOutlined,
 } from '@ant-design/icons';
 import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
@@ -45,6 +48,9 @@ const items: MenuProps['items'] = [
   getItem(<Link to="/gateway">Gateway</Link>, 'gateway', <PieChartOutlined />),
   getItem(<Link to="/user">User</Link>, 'user', <UserOutlined />),
   getItem(<Link to="/orders">Orders</Link>, 'orders', <ShoppingCartOutlined />),
+  getItem(<Link to="/transactions">Transactions</Link>, 'transactions', <CreditCardOutlined />),
+  getItem(<Link to="/wallet-actions">Wallet Actions</Link>, 'wallet-actions', <WalletOutlined />),
+  getItem(<Link to="/news-management">News Management</Link>, 'news-management', <ReadOutlined />),
   getItem(<Link to="/about">About</Link>, 'about', <InfoCircleOutlined />),
   getItem(<Link to="/sitemap">Sitemap</Link>, 'sitemap', <BranchesOutlined />),
 
@@ -229,6 +235,15 @@ const SideNav = ({ ...others }: SideNavProps) => {
       setOpenKeys([]);
     } else if (pathname.startsWith('/orders')) {
       setCurrent('orders');
+      setOpenKeys([]);
+    } else if (pathname.startsWith('/transactions')) {
+      setCurrent('transactions');
+      setOpenKeys([]);
+    } else if (pathname.startsWith('/wallet-actions')) {
+      setCurrent('wallet-actions');
+      setOpenKeys([]);
+    } else if (pathname.startsWith('/news-management')) {
+      setCurrent('news-management');
       setOpenKeys([]);
     } else if (pathname.startsWith('/about')) {
       setCurrent('about');

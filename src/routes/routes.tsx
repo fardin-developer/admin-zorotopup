@@ -24,6 +24,9 @@ import {
   EditGamePage,
   UsersPage,
   OrdersPage,
+  TransactionsPage,
+  WalletActionsPage,
+  NewsManagementPage,
   SearchResultsPage,
 } from '../pages';
 import { DashboardLayout, UserAccountLayout } from '../layouts';
@@ -159,6 +162,63 @@ const router = createBrowserRouter([
       {
         path: '',
         element: <OrdersPage />,
+      },
+    ],
+  },
+  {
+    path: '/transactions',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <TransactionsPage />,
+      },
+    ],
+  },
+  {
+    path: '/wallet-actions',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <WalletActionsPage />,
+      },
+    ],
+  },
+  {
+    path: '/news-management',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <NewsManagementPage />,
       },
     ],
   },

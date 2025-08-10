@@ -19,13 +19,13 @@ import { Logo } from '../../components';
 import { useMediaQuery } from 'react-responsive';
 import { PATH_AUTH, PATH_DASHBOARD } from '../../constants';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { API_ENDPOINTS } from '../../utils/auth';
 
 const { Title, Text, Link } = Typography;
 
 // Add this to your environment variables or constants
-const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6LdCb5wrAAAAAGzB6YHNKOHA17JAZRUBW1y1aZGe';
+// const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6LdCb5wrAAAAAGzB6YHNKOHA17JAZRUBW1y1aZGe';
 
 type SendOtpFieldType = {
   phone?: string;
@@ -69,70 +69,70 @@ export const SignInPage = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [sendOtpForm] = Form.useForm();
   const [verifyOtpForm] = Form.useForm();
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  // const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   // Load reCAPTCHA script
-  useEffect(() => {
-    const loadRecaptcha = () => {
-      if (window.grecaptcha) {
-        setRecaptchaLoaded(true);
-        return;
-      }
+  // useEffect(() => {
+  //   const loadRecaptcha = () => {
+  //     if (window.grecaptcha) {
+  //       setRecaptchaLoaded(true);
+  //       return;
+  //     }
 
-      const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        window.grecaptcha.ready(() => {
-          setRecaptchaLoaded(true);
-        });
-      };
-      script.onerror = () => {
-        console.error('Failed to load reCAPTCHA script');
-        message.error('Failed to load security verification. Please refresh the page.');
-      };
-      document.head.appendChild(script);
-    };
+  //     const script = document.createElement('script');
+  //     script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+  //     script.async = true;
+  //     script.defer = true;
+  //     script.onload = () => {
+  //       window.grecaptcha.ready(() => {
+  //         setRecaptchaLoaded(true);
+  //       });
+  //     };
+  //     script.onerror = () => {
+  //       console.error('Failed to load reCAPTCHA script');
+  //       message.error('Failed to load security verification. Please refresh the page.');
+  //     };
+  //     document.head.appendChild(script);
+  //   };
 
-    loadRecaptcha();
+  //   loadRecaptcha();
 
-    return () => {
-      // Cleanup script if component unmounts
-      const existingScript = document.querySelector(
-        `script[src*="recaptcha/api.js"]`
-      );
-      if (existingScript) {
-        existingScript.remove();
-      }
-    };
-  }, []);
+  //   return () => {
+  //     // Cleanup script if component unmounts
+  //     const existingScript = document.querySelector(
+  //       `script[src*="recaptcha/api.js"]`
+  //     );
+  //     if (existingScript) {
+  //       existingScript.remove();
+  //     }
+  //   };
+  // }, []);
 
-  const executeRecaptcha = async (action: string): Promise<string | null> => {
-    if (!recaptchaLoaded || !window.grecaptcha) {
-      message.error('Security verification not loaded. Please refresh the page.');
-      return null;
-    }
+  // const executeRecaptcha = async (action: string): Promise<string | null> => {
+  //   if (!recaptchaLoaded || !window.grecaptcha) {
+  //     message.error('Security verification not loaded. Please refresh the page.');
+  //     return null;
+  //   }
 
-    try {
-      const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
-      return token;
-    } catch (error) {
-      console.error('reCAPTCHA execution failed:', error);
-      message.error('Security verification failed. Please try again.');
-      return null;
-    }
-  };
+  //   try {
+  //     const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+  //     return token;
+  //   } catch (error) {
+  //     console.error('reCAPTCHA execution failed:', error);
+  //     message.error('Security verification failed. Please try again.');
+  //     return null;
+  //   }
+  // };
 
   const onSendOtp = async (values: SendOtpFieldType) => {
     try {
       setLoading(true);
       
       // Execute reCAPTCHA for send OTP action
-      const recaptchaToken = await executeRecaptcha('send_otp');
-      if (!recaptchaToken) {
-        return;
-      }
+      // const recaptchaToken = await executeRecaptcha('send_otp');
+      // if (!recaptchaToken) {
+      //   return;
+      // }
 
       const response = await fetch(API_ENDPOINTS.SEND_OTP, {
         method: 'POST',
@@ -141,7 +141,7 @@ export const SignInPage = () => {
         },
         body: JSON.stringify({ 
           phone: values.phone,
-          recaptchaToken: recaptchaToken,
+            // recaptchaToken: recaptchaToken,
         }),
       });
 
@@ -167,10 +167,10 @@ export const SignInPage = () => {
       setLoading(true);
       
       // Execute reCAPTCHA for verify OTP action
-      const recaptchaToken = await executeRecaptcha('verify_otp');
-      if (!recaptchaToken) {
-        return;
-      }
+      // const recaptchaToken = await executeRecaptcha('verify_otp');
+      // if (!recaptchaToken) {
+      //   return;
+      // }
 
       const response = await fetch(API_ENDPOINTS.VERIFY_OTP, {
         method: 'POST',
@@ -180,7 +180,7 @@ export const SignInPage = () => {
         body: JSON.stringify({
           phone: phoneNumber,
           otp: values.otp,
-          recaptchaToken: recaptchaToken,
+            // recaptchaToken: recaptchaToken,
         }),
       });
 
@@ -308,19 +308,19 @@ export const SignInPage = () => {
                   htmlType="submit"
                   size="large"
                   loading={loading}
-                  disabled={!recaptchaLoaded}
+                  // disabled={!recaptchaLoaded}
                   block
                 >
-                  {recaptchaLoaded ? 'Send OTP' : 'Loading Security...'}
+                  {/* {recaptchaLoaded ? 'Send OTP' : 'Loading Security...'} */}
                 </Button>
               </Form.Item>
-              {!recaptchaLoaded && (
+              {/* {!recaptchaLoaded && (
                 <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     Loading security verification...
                   </Text>
                 </div>
-              )}
+              )} */}
             </Form>
           )}
 
@@ -362,10 +362,10 @@ export const SignInPage = () => {
                     htmlType="submit"
                     size="large"
                     loading={loading}
-                    disabled={!recaptchaLoaded}
+                    // disabled={!recaptchaLoaded}
                     block
                   >
-                    {recaptchaLoaded ? 'Verify OTP & Login' : 'Loading Security...'}
+                    {/* {recaptchaLoaded ? 'Verify OTP & Login' : 'Loading Security...'} */}
                   </Button>
                   <Button
                     type="default"
@@ -377,13 +377,13 @@ export const SignInPage = () => {
                   </Button>
                 </Flex>
               </Form.Item>
-              {!recaptchaLoaded && (
+              {/* {!recaptchaLoaded && (
                 <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     Loading security verification...
                   </Text>
                 </div>
-              )}
+              )} */}
             </Form>
           )}
 
