@@ -19,17 +19,14 @@ import {
 import {
   UserOutlined,
   ShoppingCartOutlined,
-  CreditCardOutlined,
   PlayCircleOutlined,
   WalletOutlined,
-  HistoryOutlined,
   ArrowLeftOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   TransactionOutlined,
-  DollarOutlined,
   SearchOutlined
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';

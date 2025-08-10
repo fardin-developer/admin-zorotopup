@@ -3,7 +3,6 @@ import {
   Dropdown,
   Flex,
   FloatButton,
-  Input,
   Layout,
   MenuProps,
   message,
@@ -14,11 +13,9 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
-  AppstoreOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  MessageOutlined,
   QuestionOutlined,
   SettingOutlined,
   UserOutlined,
