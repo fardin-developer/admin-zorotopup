@@ -16,7 +16,9 @@ import {
   message,
   Badge,
   Tooltip,
-  Modal
+  Modal,
+  Drawer,
+  Divider
 } from 'antd';
 import {
   SearchOutlined,
@@ -28,7 +30,8 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   EditOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  MenuOutlined
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { authenticatedFetch, API_ENDPOINTS } from '../utils/auth';
@@ -105,6 +108,20 @@ const UsersPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userDetailModalVisible, setUserDetailModalVisible] = useState(false);
+  const [filtersDrawerVisible, setFiltersDrawerVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Fetch users with filters and pagination
   const fetchUsers = async (page: number = 1, limit: number = 10) => {
@@ -197,7 +214,69 @@ const UsersPage: React.FC = () => {
     setUserDetailModalVisible(true);
   };
 
-  // Table columns
+  // Mobile card view for users
+  const MobileUserCard: React.FC<{ user: User }> = ({ user }) => (
+    <Card 
+      size="small" 
+      style={{ marginBottom: 8 }}
+      actions={[
+        <Button
+          type="text"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => showUserDetails(user)}
+        >
+          View
+        </Button>,
+        <Button
+          type="text"
+          size="small"
+          icon={<EditOutlined />}
+          disabled={user.role === 'admin'}
+        >
+          Edit
+        </Button>,
+        <Button
+          type="text"
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          disabled={user.role === 'admin'}
+        >
+          Delete
+        </Button>
+      ]}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <Avatar icon={<UserOutlined />} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 500, marginBottom: 4 }}>{user.name}</div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
+            {user.email}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
+            <PhoneOutlined style={{ marginRight: 4 }} />
+            {user.phone}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <Badge
+              status={user.verified ? 'success' : 'warning'}
+              text={user.verified ? 'Verified' : 'Not Verified'}
+            />
+            <Tag color={user.role === 'admin' ? 'red' : 'blue'}>
+              {user.role.toUpperCase()}
+            </Tag>
+            <div style={{ color: '#52c41a', fontWeight: 'bold', fontSize: '12px' }}>
+              <WalletOutlined style={{ marginRight: 4 }} />
+              ₹{user.walletBalance.toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
+  // Desktop table columns
   const columns: ColumnsType<User> = [
     {
       title: 'User',
@@ -297,6 +376,79 @@ const UsersPage: React.FC = () => {
     },
   ];
 
+  // Filter components
+  const FilterControls = () => (
+    <>
+      <Row gutter={[8, 8]}>
+        <Col xs={24} sm={24} md={24}>
+          <Input
+            placeholder="Search users..."
+            prefix={<SearchOutlined />}
+            value={filters.search}
+            onChange={(e) => handleSearch(e.target.value)}
+            allowClear
+            style={{ marginBottom: 8 }}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12}>
+          <Select
+            placeholder="Verification Status"
+            value={filters.verified}
+            onChange={(value) => handleFilterChange('verified', value)}
+            allowClear
+            style={{ width: '100%', marginBottom: 8 }}
+          >
+            <Option value="true">Verified</Option>
+            <Option value="false">Not Verified</Option>
+          </Select>
+        </Col>
+        <Col xs={24} sm={12} md={12}>
+          <Select
+            placeholder="User Role"
+            value={filters.role}
+            onChange={(value) => handleFilterChange('role', value)}
+            allowClear
+            style={{ width: '100%', marginBottom: 8 }}
+          >
+            <Option value="user">User</Option>
+            <Option value="admin">Admin</Option>
+          </Select>
+        </Col>
+        <Col xs={24} sm={24} md={24}>
+          <RangePicker
+            placeholder={['Start Date', 'End Date']}
+            onChange={handleDateFilter}
+            style={{ width: '100%', marginBottom: 8 }}
+            size={isMobile ? 'middle' : 'middle'}
+          />
+        </Col>
+      </Row>
+      <Divider style={{ margin: '12px 0' }} />
+      <Row gutter={[8, 8]}>
+        <Col xs={12} sm={12}>
+          <Button
+            block
+            icon={<FilterOutlined />}
+            onClick={clearFilters}
+            disabled={!Object.values(filters).some(v => v)}
+          >
+            Clear Filters
+          </Button>
+        </Col>
+        <Col xs={12} sm={12}>
+          <Button
+            block
+            icon={<ReloadOutlined />}
+            onClick={refreshData}
+            loading={loading}
+          >
+            Refresh
+          </Button>
+        </Col>
+      </Row>
+    </>
+  );
+
   return (
     <>
       <PageHeader
@@ -315,138 +467,199 @@ const UsersPage: React.FC = () => {
 
       {/* Statistics Cards */}
       {stats && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
+        <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+          <Col xs={12} sm={6}>
+            <Card size="small">
               <Statistic
                 title="Total Users"
                 value={pagination?.totalUsers || 0}
                 prefix={<UserOutlined />}
-                valueStyle={{ color: '#1890ff' }}
+                valueStyle={{ color: '#1890ff', fontSize: isMobile ? '16px' : '24px' }}
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
+          <Col xs={12} sm={6}>
+            <Card size="small">
               <Statistic
-                title="Verified Users"
+                title="Verified"
                 value={stats.verifiedUsers}
                 prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#52c41a' }}
+                valueStyle={{ color: '#52c41a', fontSize: isMobile ? '16px' : '24px' }}
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
+          <Col xs={12} sm={6}>
+            <Card size="small">
               <Statistic
-                title="Total Wallet Balance"
-                value={stats.totalWalletBalance}
+                title="Wallet Balance"
+                value={"₹ "+stats.totalWalletBalance}
                 prefix={<WalletOutlined />}
-                suffix="₹"
-                valueStyle={{ color: '#fa8c16' }}
+                valueStyle={{ color: '#fa8c16', fontSize: isMobile ? '14px' : '20px' }}
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
+          <Col xs={12} sm={6}>
+            <Card size="small">
               <Statistic
-                title="Admin Users"
+                title="Admins"
                 value={stats.adminUsers}
                 prefix={<UserOutlined />}
-                valueStyle={{ color: '#f5222d' }}
+                valueStyle={{ color: '#f5222d', fontSize: isMobile ? '16px' : '24px' }}
               />
             </Card>
           </Col>
         </Row>
       )}
 
-      {/* Filters */}
-      <Card style={{ marginBottom: 24 }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={12} md={6}>
-            <Input
-              placeholder="Search users..."
-              prefix={<SearchOutlined />}
-              value={filters.search}
-              onChange={(e) => handleSearch(e.target.value)}
-              allowClear
-            />
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Select
-              placeholder="Verification Status"
-              value={filters.verified}
-              onChange={(value) => handleFilterChange('verified', value)}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="true">Verified</Option>
-              <Option value="false">Not Verified</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Select
-              placeholder="User Role"
-              value={filters.role}
-              onChange={(value) => handleFilterChange('role', value)}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="user">User</Option>
-              <Option value="admin">Admin</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <RangePicker
-              placeholder={['Start Date', 'End Date']}
-              onChange={handleDateFilter}
-              style={{ width: '100%' }}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Space>
-              <Button
-                icon={<FilterOutlined />}
-                onClick={clearFilters}
-                disabled={!Object.values(filters).some(v => v)}
+      {/* Mobile Filters Button */}
+      {isMobile && (
+        <Card size="small" style={{ marginBottom: 16 }}>
+          <Button
+            block
+            icon={<MenuOutlined />}
+            onClick={() => setFiltersDrawerVisible(true)}
+          >
+            Filters & Search
+          </Button>
+        </Card>
+      )}
+
+      {/* Desktop Filters */}
+      {!isMobile && (
+        <Card size="small" style={{ marginBottom: 16 }}>
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={24} sm={12} md={8}>
+              <Input
+                placeholder="Search users..."
+                prefix={<SearchOutlined />}
+                value={filters.search}
+                onChange={(e) => handleSearch(e.target.value)}
+                allowClear
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Select
+                placeholder="Status"
+                value={filters.verified}
+                onChange={(value) => handleFilterChange('verified', value)}
+                allowClear
+                style={{ width: '100%' }}
               >
-                Clear Filters
-              </Button>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={refreshData}
-                loading={loading}
+                <Option value="true">Verified</Option>
+                <Option value="false">Not Verified</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Select
+                placeholder="Role"
+                value={filters.role}
+                onChange={(value) => handleFilterChange('role', value)}
+                allowClear
+                style={{ width: '100%' }}
               >
-                Refresh
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+                <Option value="user">User</Option>
+                <Option value="admin">Admin</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <RangePicker
+                placeholder={['Start', 'End']}
+                onChange={handleDateFilter}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Space>
+                <Button
+                  icon={<FilterOutlined />}
+                  onClick={clearFilters}
+                  disabled={!Object.values(filters).some(v => v)}
+                />
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={refreshData}
+                  loading={loading}
+                />
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      {/* Users Display */}
+      <Card size="small">
+        {isMobile ? (
+          // Mobile Card View
+          <div>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>
+            ) : (
+              users.map(user => (
+                <MobileUserCard key={user._id} user={user} />
+              ))
+            )}
+            {pagination && (
+              <div style={{ textAlign: 'center', marginTop: 16, padding: '8px' }}>
+                <Space direction="vertical" size="small">
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Page {pagination.currentPage} of {pagination.totalPages} 
+                    ({pagination.totalUsers} total users)
+                  </Text>
+                  <Space>
+                    <Button
+                      size="small"
+                      disabled={!pagination.hasPrevPage}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      size="small"
+                      disabled={!pagination.hasNextPage}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                      Next
+                    </Button>
+                  </Space>
+                </Space>
+              </div>
+            )}
+          </div>
+        ) : (
+          // Desktop Table View
+          <Table
+            columns={columns}
+            dataSource={users}
+            rowKey="_id"
+            loading={loading}
+            pagination={{
+              current: pagination?.currentPage || 1,
+              total: pagination?.totalUsers || 0,
+              pageSize: pagination?.limit || 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} users`,
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+            }}
+            scroll={{ x: true }}
+          />
+        )}
       </Card>
 
-      {/* Users Table */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={users}
-          rowKey="_id"
-          loading={loading}
-          pagination={{
-            current: pagination?.currentPage || 1,
-            total: pagination?.totalUsers || 0,
-            pageSize: pagination?.limit || 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} users`,
-            onChange: (page, size) => {
-              setCurrentPage(page);
-              setPageSize(size);
-            },
-          }}
-          scroll={{ x: true }}
-        />
-      </Card>
+      {/* Mobile Filters Drawer */}
+      <Drawer
+        title="Filters & Search"
+        placement="bottom"
+        onClose={() => setFiltersDrawerVisible(false)}
+        open={filtersDrawerVisible}
+        height="auto"
+      >
+        <FilterControls />
+      </Drawer>
 
       {/* User Detail Modal */}
       <Modal
@@ -458,7 +671,8 @@ const UsersPage: React.FC = () => {
             Close
           </Button>,
         ]}
-        width={600}
+        width={isMobile ? '95%' : 600}
+        style={isMobile ? { top: 20 } : {}}
       >
         {selectedUser && (
           <div>
@@ -466,29 +680,31 @@ const UsersPage: React.FC = () => {
               <Col span={24}>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
                   <Avatar size={64} icon={<UserOutlined />} />
-                  <Title level={3} style={{ marginTop: 16 }}>
+                  <Title level={isMobile ? 4 : 3} style={{ marginTop: 16 }}>
                     {selectedUser.name}
                   </Title>
                 </div>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Email:</Text>
                 <br />
-                <Text>{selectedUser.email}</Text>
+                <Text copyable style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                  {selectedUser.email}
+                </Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Phone:</Text>
                 <br />
-                <Text>{selectedUser.phone}</Text>
+                <Text copyable>{selectedUser.phone}</Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Wallet Balance:</Text>
                 <br />
                 <Text style={{ color: '#52c41a', fontWeight: 'bold' }}>
                   ₹{selectedUser.walletBalance.toLocaleString()}
                 </Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Status:</Text>
                 <br />
                 <Badge
@@ -496,14 +712,14 @@ const UsersPage: React.FC = () => {
                   text={selectedUser.verified ? 'Verified' : 'Not Verified'}
                 />
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Role:</Text>
                 <br />
                 <Tag color={selectedUser.role === 'admin' ? 'red' : 'blue'}>
                   {selectedUser.role.toUpperCase()}
                 </Tag>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Text strong>Joined:</Text>
                 <br />
                 <Text>{dayjs(selectedUser.createdAt).format('MMMM DD, YYYY')}</Text>
@@ -516,4 +732,4 @@ const UsersPage: React.FC = () => {
   );
 };
 
-export default UsersPage; 
+export default UsersPage;

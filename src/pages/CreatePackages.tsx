@@ -499,10 +499,10 @@ const CreatePackagesPage: React.FC = () => {
 
   if (loadingApiProviders) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+      <div style={{ textAlign: 'center', padding: '50px 16px' }}>
         <Spin size="large" />
         <div style={{ marginTop: 16 }}>
-          <Title level={4}>Loading package data...</Title>
+          <Title level={4} style={{ fontSize: '18px' }}>Loading package data...</Title>
         </div>
       </div>
     );
@@ -523,11 +523,13 @@ const CreatePackagesPage: React.FC = () => {
           },
         ]}
       />
-      <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Card>
-            <Title level={2}>Create Game Package</Title>
-            <Paragraph>
+      <Row gutter={[16, 16]} style={{ padding: '0 8px' }}>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+          <Card style={{ margin: '0' }}>
+            <Title level={2} style={{ fontSize: '20px', marginBottom: '8px' }}>
+              Create Game Package
+            </Title>
+            <Paragraph style={{ fontSize: '14px', marginBottom: '24px' }}>
               Create and configure new game packages. Set up pricing, features,
               and availability for your game offerings.
             </Paragraph>
@@ -547,6 +549,7 @@ const CreatePackagesPage: React.FC = () => {
                   placeholder="Select a game"
                   showSearch
                   loading={loadingGames}
+                  size="large"
                   filterOption={(input, option) => {
                     if (!option?.children) return false;
                     return String(option.children)
@@ -561,19 +564,30 @@ const CreatePackagesPage: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
+                          flexWrap: 'wrap',
                         }}
                       >
                         <img
                           src={game.image}
                           alt={game.name}
-                          style={{ width: 24, height: 24, borderRadius: 4 }}
+                          style={{ 
+                            width: 24, 
+                            height: 24, 
+                            borderRadius: 4,
+                            minWidth: 24,
+                            minHeight: 24
+                          }}
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display =
                               'none';
                           }}
                         />
-                        <span>{game.name}</span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>{game.name}</span>
+                        <span style={{ 
+                          color: '#666', 
+                          fontSize: '12px',
+                          whiteSpace: 'nowrap'
+                        }}>
                           ({game.publisher})
                         </span>
                       </div>
@@ -581,17 +595,23 @@ const CreatePackagesPage: React.FC = () => {
                   ))}
                 </Select>
               </Form.Item>
-              <Row gutter={16}>
-                <Col span={8}>
+              
+              <Row gutter={[8, 16]}>
+                <Col xs={24} sm={8} md={8}>
                   <Form.Item
                     name="amount"
                     label="Amount"
                     rules={[{ required: true, message: 'Please enter amount' }]}
                   >
-                    <Input type="number" placeholder="Enter amount" min={0} />
+                    <Input 
+                      type="number" 
+                      placeholder="Enter amount" 
+                      min={0} 
+                      size="large"
+                    />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8} md={8}>
                   <Form.Item
                     name="commission"
                     label="Commission"
@@ -603,10 +623,11 @@ const CreatePackagesPage: React.FC = () => {
                       type="number"
                       placeholder="Enter commission"
                       min={0}
+                      size="large"
                     />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8} md={8}>
                   <Form.Item
                     name="cashback"
                     label="Cashback"
@@ -614,12 +635,18 @@ const CreatePackagesPage: React.FC = () => {
                       { required: true, message: 'Please enter cashback' },
                     ]}
                   >
-                    <Input type="number" placeholder="Enter cashback" min={0} />
+                    <Input 
+                      type="number" 
+                      placeholder="Enter cashback" 
+                      min={0} 
+                      size="large"
+                    />
                   </Form.Item>
                 </Col>
               </Row>
-              <Row gutter={16}>
-                <Col span={12}>
+              
+              <Row gutter={[8, 16]}>
+                <Col xs={24} sm={24} md={12}>
                   <Form.Item
                     name="logo"
                     label="Logo"
@@ -635,20 +662,24 @@ const CreatePackagesPage: React.FC = () => {
                       listType="picture"
                       maxCount={1}
                       accept="image/*"
+                      style={{ 
+                        minHeight: '120px',
+                        padding: '8px'
+                      }}
                     >
                       <p className="ant-upload-drag-icon">
-                        <UploadOutlined />
+                        <UploadOutlined style={{ fontSize: '24px' }} />
                       </p>
-                      <p className="ant-upload-text">
+                      <p className="ant-upload-text" style={{ fontSize: '14px' }}>
                         Click or drag file to this area
                       </p>
-                      <p className="ant-upload-hint">
+                      <p className="ant-upload-hint" style={{ fontSize: '12px' }}>
                         Support for a single image file.
                       </p>
                     </Upload.Dragger>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} sm={24} md={12}>
                   <Form.Item
                     name="status"
                     label="Status"
@@ -656,13 +687,14 @@ const CreatePackagesPage: React.FC = () => {
                       { required: true, message: 'Please select status' },
                     ]}
                   >
-                    <Select>
+                    <Select size="large">
                       <Option value="active">Active</Option>
                       <Option value="inactive">Inactive</Option>
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
+              
               <Form.Item
                 name="description"
                 label="Description"
@@ -673,9 +705,14 @@ const CreatePackagesPage: React.FC = () => {
                 <Input.TextArea
                   rows={3}
                   placeholder="Enter package description"
+                  style={{ fontSize: '14px' }}
                 />
               </Form.Item>
-              <Divider orientation="left">API Mappings</Divider>
+              
+              <Divider orientation="left" style={{ fontSize: '16px', fontWeight: 500 }}>
+                API Mappings
+              </Divider>
+              
               <Form.List name="apiMappings">
                 {(fields, { add, remove }) => (
                   <>
@@ -702,13 +739,34 @@ const CreatePackagesPage: React.FC = () => {
                           key={String(field.name)}
                           style={{
                             marginBottom: 16,
-                            padding: 16,
+                            padding: '12px',
                             border: '1px solid #d9d9d9',
                             borderRadius: 6,
+                            position: 'relative',
                           }}
                         >
-                          <Row gutter={16}>
-                            <Col span={6}>
+                          {/* Remove button for mobile - positioned at top right */}
+                          {fields.length > 1 && (
+                            <Button
+                              type="text"
+                              danger
+                              icon={<MinusCircleOutlined />}
+                              onClick={() => remove(field.name)}
+                              style={{
+                                position: 'absolute',
+                                top: '8px',
+                                right: '8px',
+                                zIndex: 1,
+                                padding: '4px 8px',
+                                height: 'auto',
+                                minWidth: 'auto'
+                              }}
+                              size="small"
+                            />
+                          )}
+                          
+                          <Row gutter={[8, 16]}>
+                            <Col xs={24} sm={12} md={6}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, 'apiProvider']}
@@ -722,6 +780,7 @@ const CreatePackagesPage: React.FC = () => {
                               >
                                 <Select
                                   placeholder="Select API Provider"
+                                  size="large"
                                   onChange={(value) =>
                                     handleApiProviderChange(value, field.name)
                                   }
@@ -737,7 +796,8 @@ const CreatePackagesPage: React.FC = () => {
                                 </Select>
                               </Form.Item>
                             </Col>
-                            <Col span={6}>
+                            
+                            <Col xs={24} sm={12} md={providerName === 'moogold' && selectedProductId ? 8 : 12}>
                               {providerName === 'moogold' ||
                               providerName === 'smileOne' ? (
                                 <Form.Item
@@ -754,6 +814,7 @@ const CreatePackagesPage: React.FC = () => {
                                   <Select
                                     placeholder="Select Product"
                                     showSearch
+                                    size="large"
                                     loading={
                                       loadingProducts[providerName || '']
                                     }
@@ -786,14 +847,18 @@ const CreatePackagesPage: React.FC = () => {
                                     },
                                   ]}
                                 >
-                                  <Input placeholder="Product Title" />
+                                  <Input 
+                                    placeholder="Product Title" 
+                                    size="large"
+                                  />
                                 </Form.Item>
                               )}
                             </Col>
+                            
                             {/* Only show variations for moogold */}
                             {providerName === 'moogold' &&
                               selectedProductId && (
-                                <Col span={10}>
+                                <Col xs={24} sm={24} md={10}>
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'variationId']}
@@ -807,6 +872,7 @@ const CreatePackagesPage: React.FC = () => {
                                   >
                                     <Select
                                       placeholder="Select Variation"
+                                      size="large"
                                       loading={
                                         loadingVariations[selectedProductId]
                                       }
@@ -827,6 +893,7 @@ const CreatePackagesPage: React.FC = () => {
                                                 style={{
                                                   fontWeight: 500,
                                                   marginBottom: 4,
+                                                  wordBreak: 'break-word'
                                                 }}
                                               >
                                                 {variation.variation_name}
@@ -837,6 +904,8 @@ const CreatePackagesPage: React.FC = () => {
                                                   justifyContent:
                                                     'space-between',
                                                   alignItems: 'center',
+                                                  gap: 8,
+                                                  flexWrap: 'wrap'
                                                 }}
                                               >
                                                 <span
@@ -864,10 +933,11 @@ const CreatePackagesPage: React.FC = () => {
                                   </Form.Item>
                                 </Col>
                               )}
+                              
                             {/* For smileone, show product ID as read-only field */}
                             {providerName === 'smileOne' &&
                               selectedProductId && (
-                                <Col span={4}>
+                                <Col xs={24} sm={12} md={4}>
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'productId']}
@@ -877,15 +947,17 @@ const CreatePackagesPage: React.FC = () => {
                                       placeholder="Product ID" 
                                       value={selectedProductId}
                                       readOnly 
+                                      size="large"
                                       style={{ backgroundColor: '#f5f5f5' }}
                                     />
                                   </Form.Item>
                                 </Col>
                               )}
+                              
                             {/* For other providers, show manual product ID input */}
                             {providerName !== 'moogold' &&
                               providerName !== 'smileOne' && (
-                                <Col span={4}>
+                                <Col xs={24} sm={12} md={4}>
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'productId']}
@@ -897,30 +969,21 @@ const CreatePackagesPage: React.FC = () => {
                                       },
                                     ]}
                                   >
-                                    <Input placeholder="Product ID" />
+                                    <Input 
+                                      placeholder="Product ID" 
+                                      size="large"
+                                    />
                                   </Form.Item>
                                 </Col>
                               )}
-                            <Col span={2}>
-                              {fields.length > 1 && (
-                                <Form.Item label=" ">
-                                  <Button
-                                    type="text"
-                                    danger
-                                    icon={<MinusCircleOutlined />}
-                                    onClick={() => remove(field.name)}
-                                    style={{ marginTop: 4 }}
-                                  />
-                                </Form.Item>
-                              )}
-                            </Col>
                           </Row>
+                          
                           {/* Moogold Product Detail Display */}
                           {productDetail && (
                             <Row
                               style={{
                                 marginTop: 8,
-                                padding: '8px 12px',
+                                padding: '12px',
                                 backgroundColor: '#f6f6f6',
                                 borderRadius: 4,
                               }}
@@ -931,6 +994,7 @@ const CreatePackagesPage: React.FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 12,
+                                    flexWrap: 'wrap',
                                   }}
                                 >
                                   <img
@@ -940,6 +1004,8 @@ const CreatePackagesPage: React.FC = () => {
                                       width: 40,
                                       height: 40,
                                       borderRadius: 4,
+                                      minWidth: 40,
+                                      minHeight: 40,
                                     }}
                                     onError={(e) => {
                                       (
@@ -947,8 +1013,12 @@ const CreatePackagesPage: React.FC = () => {
                                       ).style.display = 'none';
                                     }}
                                   />
-                                  <div>
-                                    <div style={{ fontWeight: 500 }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ 
+                                      fontWeight: 500,
+                                      wordBreak: 'break-word',
+                                      marginBottom: 4
+                                    }}>
                                       {productDetail.Product_Name}
                                     </div>
                                     <div
@@ -965,6 +1035,7 @@ const CreatePackagesPage: React.FC = () => {
                               </Col>
                             </Row>
                           )}
+                          
                           {/* Smileone Product Detail Display */}
                           {providerName === 'smileOne' &&
                             selectedProductId &&
@@ -972,7 +1043,7 @@ const CreatePackagesPage: React.FC = () => {
                               <Row
                                 style={{
                                   marginTop: 8,
-                                  padding: '8px 12px',
+                                  padding: '12px',
                                   backgroundColor: '#f6f6f6',
                                   borderRadius: 4,
                                 }}
@@ -983,10 +1054,15 @@ const CreatePackagesPage: React.FC = () => {
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: 12,
+                                      flexWrap: 'wrap',
                                     }}
                                   >
-                                    <div>
-                                      <div style={{ fontWeight: 500 }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ 
+                                        fontWeight: 500,
+                                        wordBreak: 'break-word',
+                                        marginBottom: 4
+                                      }}>
                                         {
                                           smileoneProducts.mobilelegends.find(
                                             (p) => p.id === selectedProductId
@@ -997,6 +1073,7 @@ const CreatePackagesPage: React.FC = () => {
                                         style={{
                                           color: '#666',
                                           fontSize: '12px',
+                                          wordBreak: 'break-word'
                                         }}
                                       >
                                         Price: $
@@ -1031,6 +1108,12 @@ const CreatePackagesPage: React.FC = () => {
                         onClick={() => add()}
                         icon={<PlusOutlined />}
                         block
+                        size="large"
+                        style={{ 
+                          height: 'auto',
+                          padding: '12px 24px',
+                          fontSize: '14px'
+                        }}
                       >
                         Add API Mapping
                       </Button>
@@ -1038,12 +1121,19 @@ const CreatePackagesPage: React.FC = () => {
                   </>
                 )}
               </Form.List>
-              <Form.Item>
+              
+              <Form.Item style={{ marginTop: 32, textAlign: 'center' }}>
                 <Button
                   type="primary"
                   htmlType="submit"
                   size="large"
                   loading={submitting}
+                  block
+                  style={{ 
+                    height: '48px',
+                    fontSize: '16px',
+                    fontWeight: 500
+                  }}
                 >
                   Create Package
                 </Button>

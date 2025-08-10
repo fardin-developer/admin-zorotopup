@@ -360,7 +360,7 @@ export const EcommerceDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
+    <div style={{ padding: '4px', background: '#f5f5f5',  minHeight: '100vh', minWidth: '88vw' }}>
       <Title level={2} style={{ marginBottom: '24px' }}>
         Dashboard
       </Title>
@@ -411,7 +411,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       </Row>
 
       {/* Api Balance */}
-      <Card style={{ marginBottom: '24px', width: '500px' }}>
+      <Card style={{ marginBottom: '24px' }}>
         <div
           style={{
             display: 'flex',
@@ -476,7 +476,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       {/* Recent Orders Table */}
       <Card
         title="Recent Orders"
-        style={{ marginBottom: '24px' }}
+        style={{ marginBottom: 24, width: '100%' }}
         extra={<Badge count={dashboardData.recentOrders.length} />}
       >
         <Table
@@ -484,7 +484,8 @@ export const EcommerceDashboardPage: React.FC = () => {
           dataSource={dashboardData.recentOrders}
           rowKey="_id"
           pagination={{ pageSize: 5 }}
-          scroll={{ x: true }}
+          scroll={{ x: 800 }}  // set a min width for horizontal scroll
+          size="small"          // optional: smaller table on mobile
         />
       </Card>
 
@@ -499,7 +500,8 @@ export const EcommerceDashboardPage: React.FC = () => {
           dataSource={dashboardData.recentTransactions}
           rowKey="_id"
           pagination={{ pageSize: 5 }}
-          scroll={{ x: true }}
+          scroll={{ x: 800 }}  // set a min width for horizontal scroll
+          size="small"          // optional: smaller table on mobile
         />
       </Card>
 
@@ -511,9 +513,10 @@ export const EcommerceDashboardPage: React.FC = () => {
         <Table
           columns={usersColumns}
           dataSource={dashboardData.recentUsers}
-          rowKey="_id"
+           rowKey="_id"
           pagination={{ pageSize: 5 }}
-          scroll={{ x: true }}
+          scroll={{ x: 800 }}  // set a min width for horizontal scroll
+          size="small"          // optional: smaller table on mobile
         />
       </Card>
     </div>

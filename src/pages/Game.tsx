@@ -95,7 +95,6 @@ const GamePage: React.FC = () => {
       const data: ApiResponse = await response.json();
       if (data.success) {
         setGames(data.games);
-        message.success(`Loaded ${data.count} games successfully`);
       } else {
         message.error('Failed to fetch games');
       }

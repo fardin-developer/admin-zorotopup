@@ -509,7 +509,7 @@ const EditPackagePage: React.FC = () => {
               fontSize: '12px',
               color: '#666'
             }}>
-              <Tag color="blue">${product.price}</Tag>
+              {/* <Tag color="blue">${product.price}</Tag> */}
               <Tag color="green">₹{product.cost_price}</Tag>
               <Tag color="orange">{product.discount}% off</Tag>
             </div>
@@ -618,7 +618,7 @@ const EditPackagePage: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success !== false) {
-        message.success('Package updated successfully!');
+        // message.success('Package updated successfully!');
         navigate(`/games/game/${gameId}/packages`);
       } else {
         message.error(result.message || 'Failed to update package');
@@ -767,13 +767,6 @@ const EditPackagePage: React.FC = () => {
                           }}>
                             {game.name}
                           </span>
-                          <span style={{ 
-                            color: '#666', 
-                            fontSize: '12px',
-                            lineHeight: '1.2'
-                          }}>
-                            {game.publisher}
-                          </span>
                         </div>
                       </div>
                     </Option>
@@ -824,9 +817,6 @@ const EditPackagePage: React.FC = () => {
                     label="Logo"
                     valuePropName="fileList"
                     getValueFromEvent={normFile}
-                    rules={[
-                      { required: true, message: 'Please upload a logo' },
-                    ]}
                   >
                     <Upload.Dragger
                       name="image"
@@ -1012,33 +1002,34 @@ const EditPackagePage: React.FC = () => {
                                         },
                                       ]}
                                     >
-                                      <Select
-                                        placeholder="Select Product"
-                                        showSearch
-                                        loading={
-                                          loadingProducts[providerName || '']
-                                        }
-                                        filterOption={(input, option) => {
-                                          if (!option?.children) return false;
-                                          return String(option.children)
-                                            .toLowerCase()
-                                            .includes(input.toLowerCase());
-                                        }}
-                                        onChange={(value, option) =>
-                                          handleProductSelect(
-                                            value,
-                                            option,
-                                            field.name
-                                          )
-                                        }
-                                        style={{ width: '100%' }}
-                                        dropdownStyle={{ 
-                                          maxHeight: '300px',
-                                          overflow: 'auto'
-                                        }}
-                                      >
-                                        {getProductOptions(currentApiProvider)}
-                                      </Select>
+                              <Select
+                                  placeholder="Select Product"
+                                  showSearch
+                                  loading={loadingProducts[providerName || '']}
+                                  filterOption={(input, option) => {
+                                    const title = (option?.title || option?.value || '').toString();
+                                    return title.toLowerCase().includes(input.toLowerCase());
+                                  }}
+                                  onChange={(value, option) =>
+                                    handleProductSelect(value, option, field.name)
+                                  }
+                                  style={{ 
+                                    width: '100%',
+                                    // ✅ Add these styles to prevent overflow
+                                    maxWidth: '100%'
+                                  }}
+                                  dropdownStyle={{ 
+                                    maxHeight: '300px',
+                                    overflow: 'auto'
+                                  }}
+                                  // ✅ Key fix: Use a custom label that truncates long text
+                                  optionLabelProp="label"
+                                  // ✅ Add these props to handle long text better
+                                  showArrow={true}
+                                  allowClear={true}
+                                >
+                                  {getProductOptions(currentApiProvider)}
+                                </Select>
                                     </Form.Item>
                                   ) : (
                                     <Form.Item
