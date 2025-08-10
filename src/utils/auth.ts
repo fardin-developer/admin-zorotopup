@@ -108,6 +108,10 @@ export const API_ENDPOINTS = {
   ADMIN_API_BALANCE: `${API_BASE_URL}/admin/api-balance`,
   ADMIN_USERS: (params?: string) =>
     `${API_BASE_URL}/admin/users${params ? `?${params}` : ''}`,
+  ADMIN_ORDERS: (params?: string) =>
+    `${API_BASE_URL}/admin/order${params ? `?${params}` : ''}`,
+  ADMIN_GLOBAL_SEARCH: (params?: string) =>
+    `${API_BASE_URL}/admin/search${params ? `?${params}` : ''}`,
 
   // Game endpoints
   GAMES_GET_ALL: `${API_BASE_URL}/games/get-all`,

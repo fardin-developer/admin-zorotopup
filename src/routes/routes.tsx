@@ -23,6 +23,8 @@ import {
   CreatePackagesPage,
   EditGamePage,
   UsersPage,
+  OrdersPage,
+  SearchResultsPage,
 } from '../pages';
 import { DashboardLayout, UserAccountLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
@@ -138,6 +140,44 @@ const router = createBrowserRouter([
       {
         path: '',
         element: <UsersPage />,
+      },
+    ],
+  },
+  {
+    path: '/orders',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <OrdersPage />,
+      },
+    ],
+  },
+  {
+    path: '/search',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <SearchResultsPage />,
       },
     ],
   },

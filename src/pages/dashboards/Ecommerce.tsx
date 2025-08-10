@@ -360,7 +360,7 @@ export const EcommerceDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '4px', background: '#f5f5f5',  minHeight: '100vh', minWidth: '88vw' }}>
+    <div style={{ padding: '0px', background: '#f5f5f5',  minHeight: '100vh', minWidth: '88vw' }}>
       <Title level={2} style={{ marginBottom: '24px' }}>
         Dashboard
       </Title>

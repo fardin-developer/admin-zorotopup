@@ -6,6 +6,7 @@ import {
   PieChartOutlined,
   UserOutlined,
   PlayCircleOutlined,
+  ShoppingCartOutlined,
 } from '@ant-design/icons';
 import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
@@ -43,6 +44,7 @@ const items: MenuProps['items'] = [
   ]),
   getItem(<Link to="/gateway">Gateway</Link>, 'gateway', <PieChartOutlined />),
   getItem(<Link to="/user">User</Link>, 'user', <UserOutlined />),
+  getItem(<Link to="/orders">Orders</Link>, 'orders', <ShoppingCartOutlined />),
   getItem(<Link to="/about">About</Link>, 'about', <InfoCircleOutlined />),
   getItem(<Link to="/sitemap">Sitemap</Link>, 'sitemap', <BranchesOutlined />),
 
@@ -224,6 +226,9 @@ const SideNav = ({ ...others }: SideNavProps) => {
       setOpenKeys([]);
     } else if (pathname.startsWith('/user')) {
       setCurrent('user');
+      setOpenKeys([]);
+    } else if (pathname.startsWith('/orders')) {
+      setCurrent('orders');
       setOpenKeys([]);
     } else if (pathname.startsWith('/about')) {
       setCurrent('about');

@@ -19,6 +19,7 @@ export { TimelineCard } from './TimelineCard/TimelineCard';
 export { UserAvatar } from './UserAvatar/UserAvatar';
 export { UserProfile } from './UserProfile/UserProfile';
 export { ProtectedRoute } from './ProtectedRoute/ProtectedRoute';
+export { default as GlobalSearch } from './GlobalSearch';
 export * from './Nprogress';
 export * from './dashboard';
 export * from './Container';

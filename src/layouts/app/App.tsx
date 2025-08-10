@@ -34,7 +34,7 @@ import { useMediaQuery } from 'react-responsive';
 import SideNav from './SideNav.tsx';
 import HeaderNav from './HeaderNav.tsx';
 import FooterNav from './FooterNav.tsx';
-import { NProgress } from '../../components';
+import { NProgress, GlobalSearch } from '../../components';
 import { PATH_AUTH } from '../../constants';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../redux/theme/themeSlice.ts';
@@ -120,7 +120,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       <Layout
         style={{
           minHeight: '100vh',
-          // backgroundColor: 'white',
         }}
       >
         <SideNav
@@ -178,22 +177,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                   }}
                 />
               </Tooltip>
-              <Input.Search
-                placeholder="search"
-                style={{
-                  width: isMobile ? '100%' : '400px',
-                  marginLeft: isMobile ? 0 : '.5rem',
-                }}
-                size="middle"
-              />
+              <div style={{
+                marginLeft: isMobile ? 0 : '.5rem',
+                flex: 1,
+                maxWidth: isMobile ? '200px' : '450px',
+              }}>
+                <GlobalSearch />
+              </div>
             </Flex>
             <Flex align="center" gap="small">
-              <Tooltip title="Apps">
-                <Button icon={<AppstoreOutlined />} type="text" size="large" />
-              </Tooltip>
-              <Tooltip title="Messages">
-                <Button icon={<MessageOutlined />} type="text" size="large" />
-              </Tooltip>
               <Tooltip title="Theme">
                 <Switch
                   className=" hidden sm:inline py-1"
@@ -222,7 +214,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
               // background: '#ebedf0',
               borderRadius: collapsed ? 0 : borderRadius,
               transition: 'all .25s',
-              padding: '24px 32px',
+              padding: '24px 8px',
               minHeight: 360,
             }}
           >

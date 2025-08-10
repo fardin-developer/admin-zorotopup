@@ -7,6 +7,8 @@ export { default as CreatePackagesPage } from './CreatePackages.tsx';
 export { default as CreateGamePage } from './CreateGame.tsx';
 export { default as EditGamePage } from './EditGame.tsx';
 export { default as UsersPage } from './Users.tsx';
+export { default as OrdersPage } from './Orders.tsx';
+export { default as SearchResultsPage } from './SearchResults.tsx';
 export * from './dashboards';
 export * from './corporate';
 export * from './userAccount';
