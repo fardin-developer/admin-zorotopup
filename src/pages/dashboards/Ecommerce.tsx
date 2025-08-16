@@ -74,10 +74,13 @@ interface ApiBalanceResponse {
 }
 
 interface StatsData {
-  totalUsers: number;
-  totalOrders: number;
-  totalTransactions: number;
-  totalRevenue: number;
+  todaySuccessTransactions: number;
+  todayFailedTransactions: number;
+  todayPendingTransactions: number;
+  todaySuccessOrders: number;
+  todayPendingProcessingOrders: number;
+  todayFailedOrders: number;
+  todayNewUsers: number;
 }
 
 interface TableState<T> {
@@ -512,8 +515,8 @@ export const EcommerceDashboardPage: React.FC = () => {
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
-              title="Total Users"
-              value={statsData.totalUsers}
+              title="Today's New Users"
+              value={statsData.todayNewUsers}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -522,8 +525,8 @@ export const EcommerceDashboardPage: React.FC = () => {
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
-              title="Total Orders"
-              value={statsData.totalOrders}
+              title="Today's Success Orders"
+              value={statsData.todaySuccessOrders}
               prefix={<ShoppingCartOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -532,21 +535,52 @@ export const EcommerceDashboardPage: React.FC = () => {
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
-              title="Total Transactions"
-              value={statsData.totalTransactions}
-              prefix={<TransactionOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              title="Today's Pending Orders"
+              value={statsData.todayPendingProcessingOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#faad14' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
-              title="Total Revenue"
-              value={statsData.totalRevenue}
-              prefix={<DollarOutlined />}
-              suffix="INR"
-              valueStyle={{ color: '#fa8c16' }}
+              title="Today's Failed Orders"
+              value={statsData.todayFailedOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Today's Success Transactions"
+              value={statsData.todaySuccessTransactions}
+              prefix={<TransactionOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Today's Pending Transactions"
+              value={statsData.todayPendingTransactions}
+              prefix={<TransactionOutlined />}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Today's Failed Transactions"
+              value={statsData.todayFailedTransactions}
+              prefix={<TransactionOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>

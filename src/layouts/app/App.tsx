@@ -160,7 +160,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
             }}
           >
             <Flex align="center">
-              <Tooltip title={`${collapsed ? 'Expand' : 'Collapse'} Sidebar`}>
                 <Button
                   type="text"
                   icon={
@@ -173,7 +172,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                     height: 64,
                   }}
                 />
-              </Tooltip>
               <div style={{
                 marginLeft: isMobile ? 0 : '.5rem',
                 flex: 1,
