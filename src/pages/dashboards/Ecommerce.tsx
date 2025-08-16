@@ -14,6 +14,7 @@ import {
   Badge,
   DatePicker,
   Button,
+  Divider,
 } from 'antd';
 import {
   UserOutlined,
@@ -73,7 +74,26 @@ interface ApiBalanceResponse {
   data: ApiBalanceData;
 }
 
+interface StatItem {
+  count: number;
+  amount: number;
+}
+
 interface StatsData {
+  transactions: {
+    success: StatItem;
+    failed: StatItem;
+    pending: StatItem;
+  };
+  orders: {
+    success: StatItem;
+    pendingProcessing: StatItem;
+    failed: StatItem;
+  };
+  users: {
+    newUsers: number;
+  };
+  // Legacy fields for backward compatibility
   todaySuccessTransactions: number;
   todayFailedTransactions: number;
   todayPendingTransactions: number;
@@ -81,6 +101,12 @@ interface StatsData {
   todayPendingProcessingOrders: number;
   todayFailedOrders: number;
   todayNewUsers: number;
+  todaySuccessTransactionAmount: number;
+  todayFailedTransactionAmount: number;
+  todayPendingTransactionAmount: number;
+  todaySuccessOrderAmount: number;
+  todayPendingProcessingOrderAmount: number;
+  todayFailedOrderAmount: number;
 }
 
 interface TableState<T> {
@@ -340,16 +366,20 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Order ID',
       dataIndex: '_id',
       key: '_id',
+      width: 100,
       render: (text: string) => <Text code>{text.slice(-8)}</Text>,
     },
     {
       title: 'User',
       key: 'user',
+      width: 200,
       render: (_, record: Order) => (
         <Space>
           <Avatar size="small" icon={<UserOutlined />} />
           <div>
-            <div>{record.userId.name}</div>
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
+              {record.userId.name}
+            </div>
             <Text type="secondary" style={{ fontSize: '12px' }}>
               {record.userId.email}
             </Text>
@@ -358,9 +388,10 @@ export const EcommerceDashboardPage: React.FC = () => {
       ),
     },
     {
-      title: 'Order Type',
+      title: 'Type',
       dataIndex: 'orderType',
       key: 'orderType',
+      width: 120,
       render: (text: string) => (
         <Tag color="blue">{text.replace('_', ' ').toUpperCase()}</Tag>
       ),
@@ -369,12 +400,14 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
+      width: 100,
       render: (amount: number) => `₹${amount}`,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status: 'pending' | 'success' | 'failed') => (
         <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
           {status.toUpperCase()}
@@ -385,6 +418,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Date',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 100,
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
   ];
@@ -394,16 +428,20 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Transaction ID',
       dataIndex: '_id',
       key: '_id',
+      width: 120,
       render: (text: string) => <Text code>{text.slice(-8)}</Text>,
     },
     {
       title: 'User',
       key: 'user',
+      width: 200,
       render: (_, record: Transaction) => (
         <Space>
           <Avatar size="small" icon={<UserOutlined />} />
           <div>
-            <div>{record.userId.name}</div>
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
+              {record.userId.name}
+            </div>
             <Text type="secondary" style={{ fontSize: '12px' }}>
               {record.userId.email}
             </Text>
@@ -415,17 +453,21 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
+      width: 100,
       render: (amount: number) => `₹${amount}`,
     },
     {
       title: 'Payment Note',
       dataIndex: 'paymentNote',
       key: 'paymentNote',
+      width: 150,
+      ellipsis: true,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status: 'pending' | 'success' | 'failed') => (
         <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
           {status.toUpperCase()}
@@ -436,6 +478,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Date',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 100,
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
   ];
@@ -444,6 +487,7 @@ export const EcommerceDashboardPage: React.FC = () => {
     {
       title: 'User',
       key: 'user',
+      width: 250,
       render: (_, record: User) => (
         <Space>
           <Avatar icon={<UserOutlined />} />
@@ -458,6 +502,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Verification',
       dataIndex: 'verified',
       key: 'verified',
+      width: 120,
       render: (verified: boolean) => (
         <Badge
           status={verified ? 'success' : 'warning'}
@@ -469,6 +514,7 @@ export const EcommerceDashboardPage: React.FC = () => {
       title: 'Wallet Balance',
       dataIndex: 'walletBalance',
       key: 'walletBalance',
+      width: 120,
       render: (balance: number) => `₹${balance}`,
     },
   ];
@@ -493,161 +539,275 @@ export const EcommerceDashboardPage: React.FC = () => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Use new structured data with fallback to legacy data
+  const getTransactionData = (status: 'success' | 'failed' | 'pending') => {
+    if (statsData.transactions && statsData.transactions[status]) {
+      return statsData.transactions[status];
+    }
+    // Fallback to legacy data
+    const legacyMap = {
+      success: {
+        count: statsData.todaySuccessTransactions,
+        amount: statsData.todaySuccessTransactionAmount || 0
+      },
+      failed: {
+        count: statsData.todayFailedTransactions,
+        amount: statsData.todayFailedTransactionAmount || 0
+      },
+      pending: {
+        count: statsData.todayPendingTransactions,
+        amount: statsData.todayPendingTransactionAmount || 0
+      }
+    };
+    return legacyMap[status];
+  };
+
+  const getOrderData = (status: 'success' | 'pendingProcessing' | 'failed') => {
+    if (statsData.orders && statsData.orders[status]) {
+      return statsData.orders[status];
+    }
+    // Fallback to legacy data
+    const legacyMap = {
+      success: {
+        count: statsData.todaySuccessOrders,
+        amount: statsData.todaySuccessOrderAmount || 0
+      },
+      pendingProcessing: {
+        count: statsData.todayPendingProcessingOrders,
+        amount: statsData.todayPendingProcessingOrderAmount || 0
+      },
+      failed: {
+        count: statsData.todayFailedOrders,
+        amount: statsData.todayFailedOrderAmount || 0
+      }
+    };
+    return legacyMap[status];
   };
 
   return (
     <div
       style={{
-        padding: '0px',
+        padding: '24px',
         background: '#f5f5f5',
         minHeight: '100vh',
-        minWidth: '88vw',
+        maxWidth: '100%',
+        overflow: 'hidden',
       }}
     >
       <Title level={2} style={{ marginBottom: '24px' }}>
         Dashboard
       </Title>
 
-      {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Today's New Users"
-              value={statsData.todayNewUsers}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Today's Success Orders"
-              value={statsData.todaySuccessOrders}
-              prefix={<ShoppingCartOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Today's Pending Orders"
-              value={statsData.todayPendingProcessingOrders}
-              prefix={<ShoppingCartOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Today's Failed Orders"
-              value={statsData.todayFailedOrders}
-              prefix={<ShoppingCartOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Today's Success Transactions"
-              value={statsData.todaySuccessTransactions}
-              prefix={<TransactionOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Today's Pending Transactions"
-              value={statsData.todayPendingTransactions}
-              prefix={<TransactionOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Today's Failed Transactions"
-              value={statsData.todayFailedTransactions}
-              prefix={<TransactionOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* API Balance Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={4} style={{ marginBottom: '16px', color: '#1890ff' }}>
+          <DollarOutlined style={{ marginRight: '8px' }} />
+          API Balance
+        </Title>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6} xl={6}>
+            <Card>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <WalletIcon />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '700',
+                      color: '#a0aec0',
+                      letterSpacing: '0.05em',
+                      display: 'block',
+                    }}
+                  >
+                    SMILEONE
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '600',
+                      color: '#525b6bff',
+                    }}
+                  >
+                    {formatCurrency(Number(apiBalance?.smileoneBalance) || 0)}
+                  </Text>
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6} xl={6}>
+            <Card>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <WalletIcon />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '700',
+                      color: '#a0aec0',
+                      letterSpacing: '0.05em',
+                      display: 'block',
+                    }}
+                  >
+                    MOOGOLD
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '600',
+                      color: '#525b6bff',
+                    }}
+                  >
+                    {formatCurrency(Number(apiBalance?.mooggoldBalance) || 0)}
+                  </Text>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      </div>
 
-      {/* Api Balance */}
-      <Card style={{ marginBottom: '24px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <WalletIcon />
-          <div>
-            <p
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                color: '#a0aec0',
-                letterSpacing: '0.05em',
-                margin: 0,
-              }}
-            >
-              SMILEONE
-            </p>
-            <p
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                color: '#525b6bff',
-                margin: 0,
-              }}
-            >
-              {formatCurrency(Number(apiBalance?.smileoneBalance))}
-            </p>
-          </div>
-        </div>
+      <Divider />
 
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <WalletIcon />
-          <div>
-            <p
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                color: '#a0aec0',
-                letterSpacing: '0.05em',
-                margin: 0,
-              }}
-            >
-              MOOGOLD
-            </p>
-            <p
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                color: '#525b6bff',
-                margin: 0,
-              }}
-            >
-              {formatCurrency(Number(apiBalance?.mooggoldBalance))}
-            </p>
-          </div>
-        </div>
-      </Card>
+      {/* User Statistics Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={4} style={{ marginBottom: '16px', color: '#52c41a' }}>
+          <UserOutlined style={{ marginRight: '8px' }} />
+          User Statistics
+        </Title>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6} xl={6}>
+            <Card>
+              <Statistic
+                title="Today's New Users"
+                value={statsData.users?.newUsers || statsData.todayNewUsers}
+                prefix={<UserOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      <Divider />
+
+      {/* Orders Statistics Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={4} style={{ marginBottom: '16px', color: '#722ed1' }}>
+          <ShoppingCartOutlined style={{ marginRight: '8px' }} />
+          Orders Statistics
+        </Title>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Success Orders"
+                value={formatCurrency(getOrderData('success').amount)}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getOrderData('success').count} orders
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Pending Orders"
+                value={formatCurrency(getOrderData('pendingProcessing').amount)}
+                prefix={<ClockCircleOutlined />}
+                valueStyle={{ color: '#faad14' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getOrderData('pendingProcessing').count} orders
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Failed Orders"
+                value={formatCurrency(getOrderData('failed').amount)}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{ color: '#ff4d4f' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getOrderData('failed').count} orders
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      <Divider />
+
+      {/* Transactions Statistics Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={4} style={{ marginBottom: '16px', color: '#fa8c16' }}>
+          <TransactionOutlined style={{ marginRight: '8px' }} />
+          Transactions Statistics
+        </Title>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Success Transactions"
+                value={formatCurrency(getTransactionData('success').amount)}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getTransactionData('success').count} transactions
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Pending Transactions"
+                value={formatCurrency(getTransactionData('pending').amount)}
+                prefix={<ClockCircleOutlined />}
+                valueStyle={{ color: '#faad14' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getTransactionData('pending').count} transactions
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8} xl={8}>
+            <Card>
+              <Statistic
+                title="Failed Transactions"
+                value={formatCurrency(getTransactionData('failed').amount)}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{ color: '#ff4d4f' }}
+                suffix={
+                  <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>
+                    {getTransactionData('failed').count} transactions
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      <Divider />
 
       {/* Date Filter Controls */}
       <Card style={{ marginBottom: '24px' }}>
@@ -669,7 +829,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           pagination={ordersState.pagination}
           loading={ordersState.loading}
           onChange={handleTableChange('orders')}
-          scroll={{ x: 800 }}
+          scroll={{ x: 'max-content' }}
           size="small"
         />
       </Card>
@@ -683,7 +843,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           pagination={transactionsState.pagination}
           loading={transactionsState.loading}
           onChange={handleTableChange('transactions')}
-          scroll={{ x: 800 }}
+          scroll={{ x: 'max-content' }}
           size="small"
         />
       </Card>
@@ -697,7 +857,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           pagination={usersState.pagination}
           loading={usersState.loading}
           onChange={handleTableChange('users')}
-          scroll={{ x: 800 }}
+          scroll={{ x: 'max-content' }}
           size="small"
         />
       </Card>
