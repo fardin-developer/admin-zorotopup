@@ -44,7 +44,6 @@ export const authenticatedFetch = async (
   options: RequestInit = {}
 ): Promise<Response> => {
   const token = getAuthToken();
-
   if (!token) {
     throw new Error('No authentication token available');
   }
@@ -104,14 +103,17 @@ export const API_ENDPOINTS = {
   VERIFY_OTP: `${API_BASE_URL}/admin/verify-otp`,
 
   // Admin endpoints
-  ADMIN_DASHBOARD: `${API_BASE_URL}/admin/dashboard`,
+  ADMIN_DASHBOARD_STATS: `${API_BASE_URL}/admin/dashboard/stats`,
+  ADMIN_DASHBOARD_TABLE_DATA: `${API_BASE_URL}/admin/dashboard/filters`,
   ADMIN_API_BALANCE: `${API_BASE_URL}/admin/api-balance`,
   ADMIN_USERS: (params?: string) =>
     `${API_BASE_URL}/admin/users${params ? `?${params}` : ''}`,
   ADMIN_ORDERS: (params?: string) =>
     `${API_BASE_URL}/admin/order${params ? `?${params}` : ''}`,
-  ADMIN_ORDER_STATUS_SYNC: (orderId: string, userId?: string) => 
-    `${API_BASE_URL}/order/order-status?orderId=${orderId}${userId ? `&userId=${userId}` : ''}`,
+  ADMIN_ORDER_STATUS_SYNC: (orderId: string, userId?: string) =>
+    `${API_BASE_URL}/order/order-status?orderId=${orderId}${
+      userId ? `&userId=${userId}` : ''
+    }`,
   ADMIN_TRANSACTIONS: (params?: string) =>
     `${API_BASE_URL}/admin/transaction${params ? `?${params}` : ''}`,
   ADMIN_CREDIT_WALLET: `${API_BASE_URL}/admin/credit-wallet`,

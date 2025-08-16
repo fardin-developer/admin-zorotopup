@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Row,
@@ -12,6 +12,8 @@ import {
   message,
   Space,
   Badge,
+  DatePicker,
+  Button,
 } from 'antd';
 import {
   UserOutlined,
@@ -21,11 +23,15 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  ClearOutlined,
 } from '@ant-design/icons';
-import { ColumnsType } from 'antd/es/table';
+import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { authenticatedFetch, API_ENDPOINTS } from '../../utils/auth';
+import type { RangePickerProps } from 'antd/es/date-picker';
+import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 // Type definitions
 interface User {
@@ -56,22 +62,6 @@ interface Transaction {
   txnId?: string;
 }
 
-interface DashboardData {
-  totalUsers: number;
-  totalOrders: number;
-  totalTransactions: number;
-  totalRevenue: number;
-  recentOrders: Order[];
-  recentTransactions: Transaction[];
-  recentUsers: User[];
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  data: DashboardData;
-}
-
 interface ApiBalanceData {
   mooggoldBalance: string;
   smileoneBalance: string;
@@ -81,6 +71,19 @@ interface ApiBalanceResponse {
   success: boolean;
   message: string;
   data: ApiBalanceData;
+}
+
+interface StatsData {
+  totalUsers: number;
+  totalOrders: number;
+  totalTransactions: number;
+  totalRevenue: number;
+}
+
+interface TableState<T> {
+  data: T[];
+  pagination: TablePaginationConfig;
+  loading: boolean;
 }
 
 const WalletIcon = () => (
@@ -117,44 +120,65 @@ const WalletIcon = () => (
 );
 
 export const EcommerceDashboardPage: React.FC = () => {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null
-  );
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [apiBalance, setApiBalance] = useState<ApiBalanceData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+    dayjs().startOf('day'),
+    dayjs().endOf('day'),
+  ]);
 
-  useEffect(() => {
-    fetchDashboardData();
-    fetchApiBalance();
-  }, []);
+  const initialPagination: TablePaginationConfig = {
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  };
 
-  const fetchDashboardData = async (): Promise<void> => {
+  const [ordersState, setOrdersState] = useState<TableState<Order>>({
+    data: [],
+    pagination: initialPagination,
+    loading: true,
+  });
+  const [transactionsState, setTransactionsState] = useState<
+    TableState<Transaction>
+  >({
+    data: [],
+    pagination: initialPagination,
+    loading: true,
+  });
+  const [usersState, setUsersState] = useState<TableState<User>>({
+    data: [],
+    pagination: initialPagination,
+    loading: true,
+  });
+
+  const fetchStats = async () => {
     try {
-      setLoading(true);
-      const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_DASHBOARD);
-      const result: ApiResponse = await response.json();
-
+      setLoadingStats(true);
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.ADMIN_DASHBOARD_STATS
+      );
+      const result = await response.json();
       if (result.success) {
-        setDashboardData(result.data);
+        setStatsData(result.data);
       } else {
-        message.error('Failed to fetch dashboard data');
+        message.error('Failed to fetch dashboard stats');
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching dashboard stats:', error);
       message.error('Error connecting to server');
     } finally {
-      setLoading(false);
+      setLoadingStats(false);
     }
   };
 
   const fetchApiBalance = async () => {
     try {
-      setLoading(true);
+      setLoadingStats(true);
       const response = await authenticatedFetch(
         API_ENDPOINTS.ADMIN_API_BALANCE
       );
       const result: ApiBalanceResponse = await response.json();
-
       if (result.success) {
         setApiBalance(result.data);
       } else {
@@ -164,8 +188,120 @@ export const EcommerceDashboardPage: React.FC = () => {
       console.error('Error fetching api balance:', error);
       message.error('Error connecting to server');
     } finally {
-      setLoading(false);
+      setLoadingStats(false);
     }
+  };
+
+  const fetchTableData = useCallback(
+    async (
+      tableType: 'orders' | 'transactions' | 'users',
+      pagination: TablePaginationConfig,
+      dates: [Dayjs, Dayjs]
+    ) => {
+      let setState: React.Dispatch<React.SetStateAction<TableState<any>>>;
+      switch (tableType) {
+        case 'orders':
+          setState = setOrdersState as React.Dispatch<
+            React.SetStateAction<TableState<Order>>
+          >;
+          break;
+        case 'transactions':
+          setState = setTransactionsState as React.Dispatch<
+            React.SetStateAction<TableState<Transaction>>
+          >;
+          break;
+        case 'users':
+          setState = setUsersState as React.Dispatch<
+            React.SetStateAction<TableState<User>>
+          >;
+          break;
+        default:
+          throw new Error('Invalid table type');
+      }
+
+      setState((prevState) => ({ ...prevState, loading: true }));
+
+      const params = new URLSearchParams({
+        tableType,
+        page: pagination.current?.toString() || '1',
+        limit: pagination.pageSize?.toString() || '5',
+        startDate: dates[0].toISOString(),
+        endDate: dates[1].toISOString(),
+      });
+
+      try {
+        const response = await authenticatedFetch(
+          `${API_ENDPOINTS.ADMIN_DASHBOARD_TABLE_DATA}?${params}`
+        );
+        const result = await response.json();
+        if (result.success) {
+          setState({
+            loading: false,
+            data: result.data.items,
+            pagination: { ...pagination, total: result.data.total },
+          });
+        } else {
+          message.error(`Failed to fetch ${tableType}`);
+          setState((prevState) => ({ ...prevState, loading: false }));
+        }
+      } catch (error) {
+        console.error(`Error fetching ${tableType}:`, error);
+        message.error('Error connecting to server');
+        setState((prevState) => ({ ...prevState, loading: false }));
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchStats();
+    fetchApiBalance();
+    fetchTableData('orders', initialPagination, dateRange);
+    fetchTableData('transactions', initialPagination, dateRange);
+    fetchTableData('users', initialPagination, dateRange);
+  }, [fetchTableData]);
+
+  const handleTableChange =
+    (tableType: 'orders' | 'transactions' | 'users') =>
+    (pagination: TablePaginationConfig) => {
+      fetchTableData(tableType, pagination, dateRange);
+    };
+
+  const handleDateChange = (dates: RangePickerProps['value']) => {
+    if (dates && dates[0] && dates[1]) {
+      const newDateRange: [Dayjs, Dayjs] = [dates[0], dates[1]];
+      setDateRange(newDateRange);
+      fetchTableData(
+        'orders',
+        { ...ordersState.pagination, current: 1 },
+        newDateRange
+      );
+      fetchTableData(
+        'transactions',
+        { ...transactionsState.pagination, current: 1 },
+        newDateRange
+      );
+      fetchTableData(
+        'users',
+        { ...usersState.pagination, current: 1 },
+        newDateRange
+      );
+    }
+  };
+
+  const handleClearFilter = () => {
+    const today: [Dayjs, Dayjs] = [
+      dayjs().startOf('day'),
+      dayjs().endOf('day'),
+    ];
+    setDateRange(today);
+    fetchTableData('orders', { ...ordersState.pagination, current: 1 }, today);
+    fetchTableData(
+      'transactions',
+      { ...transactionsState.pagination, current: 1 },
+      today
+    );
+    fetchTableData('users', { ...usersState.pagination, current: 1 }, today);
   };
 
   const getStatusColor = (status: 'pending' | 'success' | 'failed'): string => {
@@ -334,19 +470,18 @@ export const EcommerceDashboardPage: React.FC = () => {
     },
   ];
 
-  if (loading) {
+  if (loadingStats) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
-        <div style={{ marginTop: '16px' }}>Loading dashboard data...</div>
       </div>
     );
   }
 
-  if (!dashboardData) {
+  if (!statsData) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Title level={4}>No data available</Title>
+        <Title level={4}>Could not load dashboard stats.</Title>
       </div>
     );
   }
@@ -360,7 +495,14 @@ export const EcommerceDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '0px', background: '#f5f5f5',  minHeight: '100vh', minWidth: '88vw' }}>
+    <div
+      style={{
+        padding: '0px',
+        background: '#f5f5f5',
+        minHeight: '100vh',
+        minWidth: '88vw',
+      }}
+    >
       <Title level={2} style={{ marginBottom: '24px' }}>
         Dashboard
       </Title>
@@ -371,7 +513,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           <Card>
             <Statistic
               title="Total Users"
-              value={dashboardData.totalUsers}
+              value={statsData.totalUsers}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -381,7 +523,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           <Card>
             <Statistic
               title="Total Orders"
-              value={dashboardData.totalOrders}
+              value={statsData.totalOrders}
               prefix={<ShoppingCartOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -391,7 +533,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           <Card>
             <Statistic
               title="Total Transactions"
-              value={dashboardData.totalTransactions}
+              value={statsData.totalTransactions}
               prefix={<TransactionOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
@@ -401,7 +543,7 @@ export const EcommerceDashboardPage: React.FC = () => {
           <Card>
             <Statistic
               title="Total Revenue"
-              value={dashboardData.totalRevenue}
+              value={statsData.totalRevenue}
               prefix={<DollarOutlined />}
               suffix="INR"
               valueStyle={{ color: '#fa8c16' }}
@@ -473,50 +615,56 @@ export const EcommerceDashboardPage: React.FC = () => {
         </div>
       </Card>
 
+      {/* Date Filter Controls */}
+      <Card style={{ marginBottom: '24px' }}>
+        <Space wrap>
+          <Text strong>Filter by Date:</Text>
+          <RangePicker value={dateRange} onChange={handleDateChange} />
+          <Button icon={<ClearOutlined />} onClick={handleClearFilter}>
+            Clear & Show Today
+          </Button>
+        </Space>
+      </Card>
+
       {/* Recent Orders Table */}
-      <Card
-        title="Recent Orders"
-        style={{ marginBottom: 24, width: '100%' }}
-        extra={<Badge count={dashboardData.recentOrders.length} />}
-      >
+      <Card title="Recent Orders" style={{ marginBottom: '24px' }}>
         <Table
           columns={ordersColumns}
-          dataSource={dashboardData.recentOrders}
+          dataSource={ordersState.data}
           rowKey="_id"
-          pagination={{ pageSize: 5 }}
-          scroll={{ x: 800 }}  // set a min width for horizontal scroll
-          size="small"          // optional: smaller table on mobile
+          pagination={ordersState.pagination}
+          loading={ordersState.loading}
+          onChange={handleTableChange('orders')}
+          scroll={{ x: 800 }}
+          size="small"
         />
       </Card>
 
       {/* Recent Transactions Table */}
-      <Card
-        title="Recent Transactions"
-        style={{ marginBottom: '24px' }}
-        extra={<Badge count={dashboardData.recentTransactions.length} />}
-      >
+      <Card title="Recent Transactions" style={{ marginBottom: '24px' }}>
         <Table
           columns={transactionsColumns}
-          dataSource={dashboardData.recentTransactions}
+          dataSource={transactionsState.data}
           rowKey="_id"
-          pagination={{ pageSize: 5 }}
-          scroll={{ x: 800 }}  // set a min width for horizontal scroll
-          size="small"          // optional: smaller table on mobile
+          pagination={transactionsState.pagination}
+          loading={transactionsState.loading}
+          onChange={handleTableChange('transactions')}
+          scroll={{ x: 800 }}
+          size="small"
         />
       </Card>
 
       {/* Recent Users Table */}
-      <Card
-        title="Recent Users"
-        extra={<Badge count={dashboardData.recentUsers.length} />}
-      >
+      <Card title="Recent Users">
         <Table
           columns={usersColumns}
-          dataSource={dashboardData.recentUsers}
-           rowKey="_id"
-          pagination={{ pageSize: 5 }}
-          scroll={{ x: 800 }}  // set a min width for horizontal scroll
-          size="small"          // optional: smaller table on mobile
+          dataSource={usersState.data}
+          rowKey="_id"
+          pagination={usersState.pagination}
+          loading={usersState.loading}
+          onChange={handleTableChange('users')}
+          scroll={{ x: 800 }}
+          size="small"
         />
       </Card>
     </div>
