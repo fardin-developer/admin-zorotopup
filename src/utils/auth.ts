@@ -102,6 +102,10 @@ export const API_ENDPOINTS = {
   SEND_OTP: `${API_BASE_URL}/admin/send-otp`,
   VERIFY_OTP: `${API_BASE_URL}/admin/verify-otp`,
 
+  // Order enpoints
+  ORDER_UPDATE_STATUS: (id: string) =>
+    `${API_BASE_URL}/admin/order/status/${id}`,
+
   // Admin endpoints
   ADMIN_DASHBOARD_STATS: `${API_BASE_URL}/admin/dashboard/stats`,
   ADMIN_DASHBOARD_TABLE_DATA: `${API_BASE_URL}/admin/dashboard/filters`,

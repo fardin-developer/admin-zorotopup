@@ -241,7 +241,6 @@ const router = createBrowserRouter([
       },
     ],
   },
-
   {
     path: '/gateway',
     element: (
@@ -261,7 +260,6 @@ const router = createBrowserRouter([
       },
     ],
   },
-
   {
     path: '/profile',
     element: (
