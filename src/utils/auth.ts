@@ -117,6 +117,7 @@ export const API_ENDPOINTS = {
   ADMIN_TRANSACTIONS: (params?: string) =>
     `${API_BASE_URL}/admin/transaction${params ? `?${params}` : ''}`,
   ADMIN_CREDIT_WALLET: `${API_BASE_URL}/admin/credit-wallet`,
+  ADMIN_DEBIT_WALLET: `${API_BASE_URL}/admin/debit-wallet`,
   ADMIN_NEWS: (params?: string) =>
     `${API_BASE_URL}/admin/news${params ? `?${params}` : ''}`,
   ADMIN_NEWS_CREATE: `${API_BASE_URL}/admin/news`,

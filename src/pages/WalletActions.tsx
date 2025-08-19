@@ -7,7 +7,6 @@ import {
   Form,
   Input,
   InputNumber,
-
   Button,
   message,
   Alert,
@@ -46,13 +45,19 @@ interface WalletCreditRequest {
   utr: string;
 }
 
+interface WalletDebitRequest {
+  phone: string;
+  amount: number;
+  utr: string;
+}
+
 interface WalletCreditResponse {
   success: boolean;
   message: string;
   data?: {
     transactionId: string;
     newBalance: number;
-    creditedAmount: number;
+    amount: number;
   };
 }
 
@@ -67,13 +72,17 @@ interface RecentTransaction {
 }
 
 const WalletActionsPage: React.FC = () => {
-  const [form] = Form.useForm();
+  const [creditForm] = Form.useForm();
+  const [debitForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [selectedCreditType, setSelectedCreditType] = useState<string | null>(null);
+  const [selectedCreditType, setSelectedCreditType] = useState<string | null>(
+    null
+  );
+  const [actionType, setActionType] = useState<'debit' | 'credit' | null>(null);
   const [recentTransactions] = useState<RecentTransaction[]>([
     {
       id: '1',
@@ -82,7 +91,7 @@ const WalletActionsPage: React.FC = () => {
       type: 'reward',
       utr: 'UTR123456789',
       timestamp: '2024-01-15 10:30:00',
-      status: 'success'
+      status: 'success',
     },
     {
       id: '2',
@@ -91,8 +100,8 @@ const WalletActionsPage: React.FC = () => {
       type: 'add_balance',
       utr: 'UTR987654321',
       timestamp: '2024-01-15 09:15:00',
-      status: 'success'
-    }
+      status: 'success',
+    },
   ]);
 
   // Check if mobile on resize
@@ -100,27 +109,28 @@ const WalletActionsPage: React.FC = () => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Sync form value with local state
   React.useEffect(() => {
-    const currentValue = form.getFieldValue('creditType');
+    const currentValue = creditForm.getFieldValue('creditType');
     if (currentValue && currentValue !== selectedCreditType) {
       setSelectedCreditType(currentValue);
     }
-  }, [form, selectedCreditType]);
+  }, [creditForm, selectedCreditType]);
 
   const creditTypes = [
     {
       value: 'reward',
       label: 'Credit Reward',
       icon: <GiftOutlined />,
-      description: 'Reward credits for user achievements, referrals, or promotions',
+      description:
+        'Reward credits for user achievements, referrals, or promotions',
       color: '#52c41a',
-      bgColor: '#f6ffed'
+      bgColor: '#f6ffed',
     },
     {
       value: 'add_balance',
@@ -128,19 +138,22 @@ const WalletActionsPage: React.FC = () => {
       icon: <PlusCircleOutlined />,
       description: 'Add balance to user wallet for purchases or top-ups',
       color: '#1890ff',
-      bgColor: '#f0f8ff'
-    }
+      bgColor: '#f0f8ff',
+    },
   ];
 
-  const handleSubmit = async (values: WalletCreditRequest) => {
+  const handleCreditSubmit = async (values: WalletCreditRequest) => {
+    setLoading(true);
+    setCurrentStep(1);
+    setActionType('credit');
     try {
-      setLoading(true);
-      setCurrentStep(1);
-
-      const response = await authenticatedFetch(API_ENDPOINTS.ADMIN_CREDIT_WALLET, {
-        method: 'POST',
-        body: JSON.stringify(values)
-      });
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.ADMIN_CREDIT_WALLET,
+        {
+          method: 'POST',
+          body: JSON.stringify(values),
+        }
+      );
 
       const result: WalletCreditResponse = await response.json();
 
@@ -148,9 +161,9 @@ const WalletActionsPage: React.FC = () => {
         setCurrentStep(2);
         setSuccessData(result.data);
         message.success('Wallet credited successfully!');
-        form.resetFields();
+        creditForm.resetFields();
         setSelectedCreditType(null);
-        
+
         // Show success modal
         setTimeout(() => {
           setIsModalVisible(true);
@@ -169,12 +182,53 @@ const WalletActionsPage: React.FC = () => {
     }
   };
 
+  const handleDebitSubmit = async (values: WalletDebitRequest) => {
+    setLoading(true);
+    setCurrentStep(1);
+    setActionType('debit');
+    try {
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.ADMIN_DEBIT_WALLET,
+        {
+          method: 'POST',
+          body: JSON.stringify(values),
+        }
+      );
+
+      const result: WalletCreditResponse = await response.json();
+
+      if (result.success) {
+        setCurrentStep(2);
+        setSuccessData(result.data);
+        message.success('Wallet debitted successfully!');
+        debitForm.resetFields();
+
+        // Show success modal
+        setTimeout(() => {
+          setIsModalVisible(true);
+          setCurrentStep(0);
+        }, 1000);
+      } else {
+        setCurrentStep(0);
+        message.error(result.message || 'Failed to debit wallet');
+      }
+    } catch (error) {
+      setCurrentStep(0);
+      console.error('Error debiting wallet:', error);
+      message.error('Error debiting wallet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const validatePhoneNumber = (_: any, value: string) => {
     if (!value) {
       return Promise.reject(new Error('Phone number is required'));
     }
     if (!/^[6-9]\d{9}$/.test(value)) {
-      return Promise.reject(new Error('Please enter a valid 10-digit Indian mobile number'));
+      return Promise.reject(
+        new Error('Please enter a valid 10-digit Indian mobile number')
+      );
     }
     return Promise.resolve();
   };
@@ -184,23 +238,29 @@ const WalletActionsPage: React.FC = () => {
       return Promise.reject(new Error('UTR number is required'));
     }
     if (value.length < 6) {
-      return Promise.reject(new Error('UTR should be at least 6 characters long'));
+      return Promise.reject(
+        new Error('UTR should be at least 6 characters long')
+      );
     }
     return Promise.resolve();
   };
 
   const getTypeConfig = (type: string) => {
-    return creditTypes.find(t => t.value === type);
+    return creditTypes.find((t) => t.value === type);
   };
 
   const handleCreditTypeSelect = (typeValue: string) => {
     setSelectedCreditType(typeValue);
-    form.setFieldsValue({ creditType: typeValue });
+    creditForm.setFieldsValue({ creditType: typeValue });
     // Force form re-render to update validation
-    form.validateFields(['creditType']);
+    creditForm.validateFields(['creditType']);
   };
 
-  const CreditTypeCard: React.FC<{ type: any; selected: boolean; onClick: () => void }> = ({ type, selected, onClick }) => (
+  const CreditTypeCard: React.FC<{
+    type: any;
+    selected: boolean;
+    onClick: () => void;
+  }> = ({ type, selected, onClick }) => (
     <Card
       hoverable
       size="small"
@@ -210,9 +270,11 @@ const WalletActionsPage: React.FC = () => {
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         transform: selected ? 'scale(1.02)' : 'scale(1)',
-        boxShadow: selected ? `0 8px 24px ${type.color}20` : '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: selected
+          ? `0 8px 24px ${type.color}20`
+          : '0 2px 8px rgba(0,0,0,0.1)',
         position: 'relative',
-        overflow: 'visible'
+        overflow: 'visible',
       }}
       onClick={onClick}
     >
@@ -232,56 +294,66 @@ const WalletActionsPage: React.FC = () => {
             justifyContent: 'center',
             zIndex: 10,
             border: '3px solid white',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
           }}
         >
           <CheckCircleOutlined style={{ color: 'white', fontSize: '14px' }} />
         </div>
       )}
-      
+
       <div style={{ textAlign: 'center', padding: isMobile ? '8px' : '16px' }}>
         <Avatar
           size={isMobile ? 40 : 56}
-          style={{ 
+          style={{
             backgroundColor: selected ? type.color : `${type.color}20`,
-            border: selected ? `3px solid ${type.color}` : `2px solid ${type.color}40`,
+            border: selected
+              ? `3px solid ${type.color}`
+              : `2px solid ${type.color}40`,
             marginBottom: 12,
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
           }}
-          icon={React.cloneElement(type.icon, { 
-            style: { 
+          icon={React.cloneElement(type.icon, {
+            style: {
               color: selected ? 'white' : type.color,
-              fontSize: selected ? (isMobile ? '18px' : '24px') : (isMobile ? '16px' : '20px')
-            } 
+              fontSize: selected
+                ? isMobile
+                  ? '18px'
+                  : '24px'
+                : isMobile
+                  ? '16px'
+                  : '20px',
+            },
           })}
         />
-        <Title 
-          level={isMobile ? 5 : 4} 
-          style={{ 
-            margin: '8px 0 4px 0', 
+        <Title
+          level={isMobile ? 5 : 4}
+          style={{
+            margin: '8px 0 4px 0',
             color: selected ? type.color : '#666',
             fontWeight: selected ? 'bold' : 'normal',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
           }}
         >
           {type.label}
           {selected && (
-            <span style={{ 
-              marginLeft: 8, 
-              fontSize: '12px', 
-              color: type.color,
-              fontWeight: 'bold'
-            }}>
+            <span
+              style={{
+                marginLeft: 8,
+                fontSize: '12px',
+                color: type.color,
+                fontWeight: 'bold',
+              }}
+            >
               ✓ SELECTED
             </span>
           )}
         </Title>
-        <Text 
-          type="secondary" 
-          style={{ 
+        <Text
+          type="secondary"
+          style={{
             fontSize: isMobile ? '11px' : '12px',
             color: selected ? type.color : '#999',
-            fontWeight: selected ? '500' : 'normal'
+            fontWeight: selected ? '500' : 'normal',
           }}
         >
           {type.description}
@@ -345,9 +417,9 @@ const WalletActionsPage: React.FC = () => {
             />
 
             <Form
-              form={form}
+              form={creditForm}
               layout="vertical"
-              onFinish={handleSubmit}
+              onFinish={handleCreditSubmit}
               disabled={loading}
               size={isMobile ? 'middle' : 'large'}
             >
@@ -362,7 +434,9 @@ const WalletActionsPage: React.FC = () => {
                   </Space>
                 }
                 name="creditType"
-                rules={[{ required: true, message: 'Please select a credit type' }]}
+                rules={[
+                  { required: true, message: 'Please select a credit type' },
+                ]}
               >
                 <Input style={{ display: 'none' }} />
               </Form.Item>
@@ -412,8 +486,16 @@ const WalletActionsPage: React.FC = () => {
                     name="amount"
                     rules={[
                       { required: true, message: 'Please enter amount' },
-                      { type: 'number', min: 1, message: 'Amount must be greater than 0' },
-                      { type: 'number', max: 50000, message: 'Amount cannot exceed ₹50,000' }
+                      {
+                        type: 'number',
+                        min: 1,
+                        message: 'Amount must be greater than 0',
+                      },
+                      {
+                        type: 'number',
+                        max: 50000,
+                        message: 'Amount cannot exceed ₹50,000',
+                      },
                     ]}
                   >
                     <InputNumber
@@ -422,8 +504,12 @@ const WalletActionsPage: React.FC = () => {
                       prefix="₹"
                       min={1}
                       max={50000}
-                      formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={(value) => value!.replace(/\$\s?|(,*)/g, '') as any}
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                      }
+                      parser={(value) =>
+                        value!.replace(/\$\s?|(,*)/g, '') as any
+                      }
                     />
                   </Form.Item>
                 </Col>
@@ -465,7 +551,7 @@ const WalletActionsPage: React.FC = () => {
                   style={{
                     height: isMobile ? '48px' : '56px',
                     fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600'
+                    fontWeight: '600',
                   }}
                 >
                   {loading ? 'Processing Credit...' : 'Credit Wallet'}
@@ -494,12 +580,17 @@ const WalletActionsPage: React.FC = () => {
                     avatar={
                       <Avatar
                         icon={getTypeConfig(item.type)?.icon}
-                        style={{ backgroundColor: getTypeConfig(item.type)?.color }}
+                        style={{
+                          backgroundColor: getTypeConfig(item.type)?.color,
+                        }}
                       />
                     }
                     title={
                       <Space direction="vertical" size={0}>
-                        <Text strong style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                        <Text
+                          strong
+                          style={{ fontSize: isMobile ? '12px' : '14px' }}
+                        >
                           +91 {item.phone}
                         </Text>
                         <Space>
@@ -509,7 +600,10 @@ const WalletActionsPage: React.FC = () => {
                           >
                             {getTypeConfig(item.type)?.label}
                           </Tag>
-                          <Tag color="green" style={{ fontSize: '10px', margin: 0 }}>
+                          <Tag
+                            color="green"
+                            style={{ fontSize: '10px', margin: 0 }}
+                          >
                             ₹{item.amount.toLocaleString()}
                           </Tag>
                         </Space>
@@ -552,18 +646,167 @@ const WalletActionsPage: React.FC = () => {
         </Col>
       </Row>
 
+      <Row style={{ marginTop: 18 }} gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card
+            title={
+              <Space>
+                <WalletOutlined style={{ color: '#1890ff' }} />
+                <span>Debit User Wallet</span>
+              </Space>
+            }
+            extra={
+              <Tag color="blue" icon={<CreditCardOutlined />}>
+                Admin Action
+              </Tag>
+            }
+          >
+            <ProcessSteps />
+
+            <Alert
+              message="Important Information"
+              description="Please ensure all details are correct before submitting. This action will immediately debit the user's wallet and cannot be undone."
+              type="info"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
+
+            <Form
+              form={debitForm}
+              layout="vertical"
+              onFinish={handleDebitSubmit}
+              disabled={loading}
+              size={isMobile ? 'middle' : 'large'}
+            >
+              <Row gutter={[16, 16]}>
+                {/* Phone Number */}
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <PhoneOutlined />
+                        <Text strong>Phone Number</Text>
+                      </Space>
+                    }
+                    name="phone"
+                    rules={[{ validator: validatePhoneNumber }]}
+                  >
+                    <Input
+                      placeholder="Enter 10-digit mobile number"
+                      prefix={<Text type="secondary">+91</Text>}
+                      maxLength={10}
+                    />
+                  </Form.Item>
+                </Col>
+
+                {/* Amount */}
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <DollarOutlined />
+                        <Text strong>Amount (₹)</Text>
+                      </Space>
+                    }
+                    name="amount"
+                    rules={[
+                      { required: true, message: 'Please enter amount' },
+                      {
+                        type: 'number',
+                        min: 1,
+                        message: 'Amount must be greater than 0',
+                      },
+                      {
+                        type: 'number',
+                        max: 50000,
+                        message: 'Amount cannot exceed ₹50,000',
+                      },
+                    ]}
+                  >
+                    <InputNumber
+                      placeholder="Enter amount"
+                      style={{ width: '100%' }}
+                      prefix="₹"
+                      min={1}
+                      max={50000}
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                      }
+                      parser={(value) =>
+                        value!.replace(/\$\s?|(,*)/g, '') as any
+                      }
+                    />
+                  </Form.Item>
+                </Col>
+
+                {/* UTR Number */}
+                <Col xs={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <SafetyOutlined />
+                        <Text strong>UTR/Transaction Reference</Text>
+                        <Tooltip title="Unique Transaction Reference number for tracking">
+                          <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                        </Tooltip>
+                      </Space>
+                    }
+                    name="utr"
+                    rules={[{ validator: validateUTR }]}
+                  >
+                    <Input
+                      placeholder="Enter UTR or transaction reference number"
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Divider />
+
+              {/* Submit Button */}
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  size="large"
+                  block={isMobile}
+                  icon={<WalletOutlined />}
+                  style={{
+                    height: isMobile ? '48px' : '56px',
+                    fontSize: isMobile ? '14px' : '16px',
+                    fontWeight: '600',
+                  }}
+                >
+                  {loading ? 'Processing Debit...' : 'Debit Wallet'}
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
+
       {/* Success Modal */}
       <Modal
         title={
           <Space>
-            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
-            <span>Wallet Credit Successful</span>
+            <CheckCircleOutlined
+              style={{ color: '#52c41a', fontSize: '24px' }}
+            />
+            <span>
+              Wallet {actionType === 'credit' ? 'Credit' : 'Debit'} Successful
+            </span>
           </Space>
         }
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={[
-          <Button key="close" type="primary" onClick={() => setIsModalVisible(false)}>
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setIsModalVisible(false)}
+          >
             Close
           </Button>,
         ]}
@@ -578,9 +821,10 @@ const WalletActionsPage: React.FC = () => {
               style={{ backgroundColor: '#52c41a', marginBottom: 16 }}
             />
             <Title level={4} style={{ color: '#52c41a', marginBottom: 24 }}>
-              Credit Processed Successfully!
+              {actionType === 'credit' ? 'Credit' : 'Debit'} Processed
+              Successfully!
             </Title>
-            
+
             <Row gutter={[16, 8]}>
               <Col span={12}>
                 <Text type="secondary">Transaction ID:</Text>
@@ -588,16 +832,18 @@ const WalletActionsPage: React.FC = () => {
               <Col span={12}>
                 <Text strong>{successData.transactionId}</Text>
               </Col>
-              
+
               <Col span={12}>
-                <Text type="secondary">Credited Amount:</Text>
+                <Text type="secondary">
+                  {actionType === 'credit' ? 'Credited' : 'Debited'} Amount:
+                </Text>
               </Col>
               <Col span={12}>
                 <Text strong style={{ color: '#52c41a' }}>
-                  ₹{successData.creditedAmount?.toLocaleString()}
+                  ₹{successData.amount?.toLocaleString()}
                 </Text>
               </Col>
-              
+
               <Col span={12}>
                 <Text type="secondary">New Balance:</Text>
               </Col>
