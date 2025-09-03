@@ -27,7 +27,7 @@ import {
 } from '@ant-design/icons';
 import { PageHeader } from '../components';
 import { useNavigate, useParams } from 'react-router-dom';
-import { API_BASE_URL } from '../utils/auth';
+import { API_BASE_URL, API_ENDPOINTS, authenticatedFetch } from '../utils/auth';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -133,13 +133,30 @@ const GamePackages: React.FC = () => {
   const handleDeletePackage = async (packageId: string) => {
     console.log('Deleting package:', packageId);
     try {
-      // TODO: Implement delete API call
-      message.success('Package deleted successfully');
-      // Refresh the packages list
-      await fetchGamePackages();
+      const response = await authenticatedFetch(
+        API_ENDPOINTS.GAMES_DELETE_DIAMOND_PACK(packageId),
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        message.success('Package deleted successfully');
+        // Refresh the packages list
+        await fetchGamePackages();
+      } else {
+        throw new Error(result.message || 'Failed to delete package');
+      }
     } catch (error) {
       console.error('Error deleting package:', error);
-      message.error('Failed to delete package');
+      message.error(error instanceof Error ? error.message : 'Failed to delete package');
     }
   };
 
