@@ -94,7 +94,7 @@ function getApiBaseUrl() {
 export const domain = getApiBaseUrl();
 
 // API base URL
-export const API_BASE_URL = 'https://game.cptopup.in/api/v1';
+export const API_BASE_URL = 'https://api.zorotopup.com/api/v1';
 
 // Common API endpoints
 export const API_ENDPOINTS = {
