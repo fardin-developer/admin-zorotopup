@@ -154,7 +154,11 @@ const OrdersPage: React.FC = () => {
   }, []);
 
   // Fetch orders with filters and pagination
-  const fetchOrders = async (page: number = 1, limit: number = 10) => {
+  const fetchOrders = async (
+    page: number,
+    limit: number,
+    currentFilters: Filters
+  ) => {
     try {
       setLoading(true);
 
@@ -163,15 +167,19 @@ const OrdersPage: React.FC = () => {
       params.append('page', page.toString());
       params.append('limit', limit.toString());
 
-      if (filters.search) params.append('search', filters.search);
-      if (filters.orderId) params.append('orderId', filters.orderId);
-      if (filters.orderType) params.append('orderType', filters.orderType);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.paymentMethod)
-        params.append('paymentMethod', filters.paymentMethod);
-      if (filters.date) params.append('date', filters.date);
-      if (filters.minAmount) params.append('minAmount', filters.minAmount);
-      if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
+      if (currentFilters.search) params.append('search', currentFilters.search);
+      if (currentFilters.orderId)
+        params.append('orderId', currentFilters.orderId);
+      if (currentFilters.orderType)
+        params.append('orderType', currentFilters.orderType);
+      if (currentFilters.status) params.append('status', currentFilters.status);
+      if (currentFilters.paymentMethod)
+        params.append('paymentMethod', currentFilters.paymentMethod);
+      if (currentFilters.date) params.append('date', currentFilters.date);
+      if (currentFilters.minAmount)
+        params.append('minAmount', currentFilters.minAmount);
+      if (currentFilters.maxAmount)
+        params.append('maxAmount', currentFilters.maxAmount);
 
       const response = await authenticatedFetch(
         API_ENDPOINTS.ADMIN_ORDERS(params.toString())
@@ -193,22 +201,21 @@ const OrdersPage: React.FC = () => {
     }
   };
 
+  // useEffect to fetch orders whenever currentPage, pageSize, or filters change
   useEffect(() => {
-    fetchOrders(currentPage, pageSize);
-  }, [currentPage, pageSize]);
+    fetchOrders(currentPage, pageSize, filters);
+  }, [currentPage, pageSize, filters]);
 
   // Handle search
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
   };
 
   // Handle filter changes
   const handleFilterChange = (key: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
   };
 
   // Handle date filter
@@ -221,7 +228,6 @@ const OrdersPage: React.FC = () => {
       setFilters((prev) => ({ ...prev, date: '' }));
     }
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
   };
 
   const handleUpdateOrderStatus = async () => {
@@ -250,7 +256,7 @@ const OrdersPage: React.FC = () => {
 
       const data: OrdersResponse = await response.json();
       if (data.success) {
-        await fetchOrders();
+        await fetchOrders(currentPage, pageSize, filters); // Pass current page, size, and filters
         setOrderLogsModalVisible(false);
       } else {
         message.error(data.message || 'Failed to update order status');
@@ -276,12 +282,11 @@ const OrdersPage: React.FC = () => {
       maxAmount: '',
     });
     setCurrentPage(1);
-    fetchOrders(1, pageSize);
   };
 
   // Refresh data
   const refreshData = () => {
-    fetchOrders(currentPage, pageSize);
+    fetchOrders(currentPage, pageSize, filters);
   };
 
   // Show order details
@@ -312,7 +317,7 @@ const OrdersPage: React.FC = () => {
       if (result.success) {
         message.success('Order status synced successfully');
         // Refresh the orders list to get updated status
-        fetchOrders(currentPage, pageSize);
+        fetchOrders(currentPage, pageSize, filters);
       } else {
         message.error(result.message || 'Failed to sync order status');
       }
@@ -510,7 +515,7 @@ const OrdersPage: React.FC = () => {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => dayjs(date).format('MMM DD, YYYY'),
+      render: (date: string) => dayjs(date).format('MMM DD, YYYY HH:mm'),
     },
     {
       title: 'Actions',
