@@ -165,6 +165,45 @@
   font-weight: bolder;
 }
 
+/*
+ * Styles to fix the sorting and hover issues
+ * Add this to your global stylesheet.
+ */
+
+/* Fix for the table header turning black when not sorted */
+.ant-table-thead > tr > th {
+  background-color: #f7f7f7 !important; /* Default light gray header background */
+}
+
+/* Fix for the table header when it is the sorted column */
+.ant-table-thead > tr > th.ant-table-column-sort {
+  background-color: #e6f7ff !important; /* Light blue background for sorted column */
+}
+
+/* Fix for the table cells turning black when a column is sorted */
+.ant-table-tbody > tr > td {
+  background-color: #fff !important; /* Default white cell background */
+  color: #000 !important; /* Default black text color */
+}
+
+/* Fix for the table cells when hovered, so they don't turn black */
+.ant-table-tbody > tr:hover > td,
+.ant-table-tbody > tr.ant-table-row-selected > td {
+  background: #fafafa !important; /* A light gray background on hover */
+  color: #000 !important;
+}
+
+/* If you have fixed columns, apply similar styles */
+.ant-table-thead > tr > th.ant-table-cell-fix-left,
+.ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background-color: #f7f7f7 !important;
+}
+
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background-color: #fff !important;
+}
+
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {
   .overflow-scroll {

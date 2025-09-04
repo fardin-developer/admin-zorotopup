@@ -186,6 +186,8 @@ const OrdersPage: React.FC = () => {
       );
       const data: OrdersResponse = await response.json();
 
+      // console.log(data);
+
       if (data.success) {
         setOrders(data.data.orders);
         setPagination(data.data.pagination);
@@ -515,6 +517,7 @@ const OrdersPage: React.FC = () => {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      sorter: (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
       render: (date: string) => dayjs(date).format('MMM DD, YYYY HH:mm'),
     },
     {
