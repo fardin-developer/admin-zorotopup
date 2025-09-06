@@ -28,6 +28,7 @@ import {
   WalletActionsPage,
   NewsManagementPage,
   SearchResultsPage,
+  GamingAccountsPage,
 } from '../pages';
 import { DashboardLayout, UserAccountLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
@@ -124,6 +125,26 @@ const router = createBrowserRouter([
       {
         path: 'create-game',
         element: <CreateGame />,
+      },
+    ],
+  },
+  {
+    path: '/gaming-accounts',
+    element: (
+      <PageWrapper
+        children={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        index: true,
+        path: '',
+        element: <GamingAccountsPage />,
       },
     ],
   },

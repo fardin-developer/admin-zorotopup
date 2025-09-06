@@ -38,6 +38,7 @@ interface Game {
   publisher: string;
   productId: string;
   validationFields: string[];
+  category?: string;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -61,6 +62,7 @@ interface CreateGamePayload {
   productId: string;
   image: UploadFile[];
   validationFields: string[];
+  category?: string;
 }
 
 const validationFieldOptions = ['userId', 'serverId', 'region', 'other id'];
@@ -148,6 +150,9 @@ const GamePage: React.FC = () => {
       const formData = new FormData();
 
       formData.append('name', values.name);
+      if (values.category) {
+        formData.append('category', values.category);
+      }
       formData.append('publisher', values.publisher);
       formData.append('productId', values.productId);
       formData.append(
@@ -194,6 +199,7 @@ const GamePage: React.FC = () => {
         name: selectedGame.name,
         publisher: selectedGame.publisher,
         productId: selectedGame.productId,
+        category: selectedGame.category || '',
         image: [], // Reset file upload field
         validationFields: selectedGame.validationFields,
       });
@@ -258,6 +264,9 @@ const GamePage: React.FC = () => {
       const formData = new FormData();
 
       formData.append('name', values.name);
+      if (values.category) {
+        formData.append('category', values.category);
+      }
       formData.append('publisher', values.publisher);
       formData.append('productId', values.productId);
       formData.append(
@@ -428,6 +437,12 @@ const GamePage: React.FC = () => {
                         <Text strong>Product ID: </Text>
                         <Text code>{game.productId}</Text>
                       </div>
+                      {game.category && (
+                        <div style={{ marginTop: 4 }}>
+                          <Text strong>Category: </Text>
+                          <Tag color="green">{game.category}</Tag>
+                        </div>
+                      )}
                       {game.game_id && (
                         <div style={{ marginTop: 4 }}>
                           <Text strong>Game ID: </Text>
@@ -477,6 +492,14 @@ const GamePage: React.FC = () => {
             rules={[{ required: true }, { min: 2 }]}
           >
             <Input placeholder="e.g., Moonton" size="large" />
+          </Form.Item>
+
+          <Form.Item
+            label="Category"
+            name="category"
+            rules={[{ required: false }]}
+          >
+            <Input placeholder="e.g., MOBA, Battle Royale, RPG" size="large" />
           </Form.Item>
 
           <Form.Item
@@ -625,6 +648,14 @@ const GamePage: React.FC = () => {
             rules={[{ required: true }, { min: 2 }]}
           >
             <Input size="large" />
+          </Form.Item>
+
+          <Form.Item
+            label="Category"
+            name="category"
+            rules={[{ required: false }]}
+          >
+            <Input placeholder="e.g., MOBA, Battle Royale, RPG" size="large" />
           </Form.Item>
 
           <Form.Item

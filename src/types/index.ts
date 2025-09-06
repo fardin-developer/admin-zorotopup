@@ -38,6 +38,16 @@ import type { Faq } from './faq';
 import type { Pricing } from './pricing';
 import type { Session } from './session';
 import type { ActivityTimeline } from './timeline';
+import type {
+  GamingAccount,
+  GamingAccountWithSeller,
+  GamingAccountHighlights,
+  GamingAccountSkin,
+  CreateGamingAccountPayload,
+  UpdateGamingAccountPayload,
+  GamingAccountFilters,
+  GamingAccountApiResponse,
+} from './gaming-accounts';
 
 export type {
   Projects,
@@ -72,4 +82,12 @@ export type {
   Pricing,
   Session,
   ActivityTimeline,
+  GamingAccount,
+  GamingAccountWithSeller,
+  GamingAccountHighlights,
+  GamingAccountSkin,
+  CreateGamingAccountPayload,
+  UpdateGamingAccountPayload,
+  GamingAccountFilters,
+  GamingAccountApiResponse,
 };

@@ -156,4 +156,11 @@ export const API_ENDPOINTS = {
 
   // API providers endpoint
   API_LIST: `${API_BASE_URL}/api/list`,
+
+  // Gaming Accounts endpoints
+  GAMING_ACCOUNTS_GET_ALL: `${API_BASE_URL}/gaming-id`,
+  GAMING_ACCOUNTS_CREATE: `${API_BASE_URL}/gaming-id`,
+  GAMING_ACCOUNTS_GET_BY_ID: (id: string) => `${API_BASE_URL}/gaming-id/${id}`,
+  GAMING_ACCOUNTS_UPDATE: (id: string) => `${API_BASE_URL}/gaming-id/${id}`,
+  GAMING_ACCOUNTS_DELETE: (id: string) => `${API_BASE_URL}/gaming-id/${id}`,
 };

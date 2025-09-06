@@ -45,6 +45,7 @@ const items: MenuProps['items'] = [
       null
     ),
   ]),
+  getItem(<Link to="/gaming-accounts">Gaming Accounts</Link>, 'gaming-accounts', <PlayCircleOutlined />),
   getItem(<Link to="/gateway">Gateway</Link>, 'gateway', <PieChartOutlined />),
   getItem(<Link to="/user">User</Link>, 'user', <UserOutlined />),
   getItem(<Link to="/orders">Orders</Link>, 'orders', <ShoppingCartOutlined />),
@@ -227,6 +228,9 @@ const SideNav = ({ ...others }: SideNavProps) => {
       } else if (pathname.includes('create-packages')) {
         setCurrent('create-packages');
       }
+    } else if (pathname.startsWith('/gaming-accounts')) {
+      setCurrent('gaming-accounts');
+      setOpenKeys([]);
     } else if (pathname.startsWith('/gateway')) {
       setCurrent('gateway');
       setOpenKeys([]);

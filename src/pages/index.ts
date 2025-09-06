@@ -12,6 +12,7 @@ export { default as TransactionsPage } from './Transactions.tsx';
 export { default as WalletActionsPage } from './WalletActions.tsx';
 export { default as NewsManagementPage } from './NewsManagement.tsx';
 export { default as SearchResultsPage } from './SearchResults.tsx';
+export { default as GamingAccountsPage } from './GamingAccounts.tsx';
 export * from './dashboards';
 export * from './corporate';
 export * from './userAccount';
